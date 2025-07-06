@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id                  String  @id @default(cuid())
+  name                String  @unique
+  email               String  @unique
+  password            String
+  bio                 String
+  image               String
+  provider            AuthProvider
+  blog                Blog[]      @relation("AuthorBlogs")
+  createdAt           DateTime    @default(now())
+  followers           Follower[]  @relation("FollowedBy")
+  following           Follower[]  @relation("Following")
+  Bookmark            Bookmark[]
+  comments            Comment[]
+  claps               Claps[]
+}
+
+
+model Blog {
+  id                  String    @id  @default(cuid())
+  slug                String    @unique
+  title               String
+  description         String
+  content             String
+  userId              String
+  readTime            String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation("AuthorBlogs", fields: [userId], references: [id])
+  comment             Comment[]
+  claps               Claps[]
+  Bookmark            Bookmark[]
+}
+
+
+model Claps {
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  blogId              String
+  blog                Blog      @relation(fields: [blogId], references: [id])
+
+  @@id([userId, blogId])                
+}
+
+
+model Bookmark {
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  blogId              String
+  blog                Blog      @relation(fields: [blogId], references: [id])
+
+  @@id([userId, blogId])                
+}
+
+
+model Comment {
+  id                  String      @id @default(cuid())
+  body                String
+  createdAt           DateTime    @default(now())
+  parentId            String?
+  parent              Comment?    @relation("ParentComment", fields: [parentId], references: [id])
+  children            Comment[]   @relation("ParentComment")
+  blogId              String
+  blog                Blog        @relation(fields: [blogId], references: [id])
+  userId              String
+  user                User        @relation(fields: [userId], references: [id])  
+}
+
+
+model Follower {
+  followerId          String
+  follower            User @relation("Following", fields: [followerId], references: [id])
+  followingId         String
+  Following           User @relation("FollowedBy", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GITHUB
+}
