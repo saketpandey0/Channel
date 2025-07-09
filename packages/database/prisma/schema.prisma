@@ -24,6 +24,7 @@ model User {
   bio                 String
   image               String
   provider            AuthProvider
+  refreshToken        RefreshToken[]
   blog                Blog[]      @relation("AuthorBlogs")
   createdAt           DateTime    @default(now())
   followers           Follower[]  @relation("FollowedBy")
@@ -31,6 +32,16 @@ model User {
   Bookmark            Bookmark[]
   comments            Comment[]
   claps               Claps[]
+}
+
+
+model RefreshToken {
+  id                  String   @id @default(cuid())
+  token               String   @unique
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
+  createdAt           DateTime  @default(now())
+  expireDate          DateTime  
 }
 
 
