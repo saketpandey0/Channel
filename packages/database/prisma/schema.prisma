@@ -51,11 +51,11 @@ model Blog {
   title               String
   description         String
   content             String
-  userId              String
+  authorId            String
   readTime            String
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-  user                User      @relation("AuthorBlogs", fields: [userId], references: [id])
+  author              User      @relation("AuthorBlogs", fields: [authorId], references: [id])
   comment             Comment[]
   claps               Claps[]
   Bookmark            Bookmark[]
@@ -110,4 +110,5 @@ enum AuthProvider {
   EMAIL
   GOOGLE
   GITHUB
+  FACEBOOK
 }

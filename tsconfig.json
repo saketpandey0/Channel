@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/db": ["packages/database/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules"],
+  "references": [
+    { "path": "packages/database" },
+    { "path": "apps/server" },
+    { "path": "apps/client" },
+    { "path": "packages" }
+  ]
+}

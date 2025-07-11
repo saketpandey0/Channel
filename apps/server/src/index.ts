@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import { prisma } from '@repo/db';
+import { initPassport } from './passport';
+import passport from 'passport';
+import userRoute from './routes/userRoute';
 
 const allowedHosts = process.env.ALLOWED_HOSTS 
     ? process.env.ALLOWED_HOSTS.split(',')
@@ -33,6 +36,12 @@ app.use(
         }
     })
 )
+
+initPassport();
+app.use(passport.initialize());
+app.use(passport.authenticate('session'));
+
+app.use('/api/v1',userRoute);
 
 
 const PORT = process.env.PORT || 3000;
