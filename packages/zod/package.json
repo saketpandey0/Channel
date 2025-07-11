@@ -1,18 +1,15 @@
 {
   "name": "@repo/zod",
   "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "main": "dist/userValidation.js",        
+  "types": "dist/userValidation.d.ts",    
+  "exports": {
+    "./userValidation": "./dist/userValidation.js"        
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "scripts": {
+    "build": "tsc"
+  },
   "dependencies": {
     "zod": "^3.25.76"
-  },
-  "exports": {
-    "./userValidation": "./src/userValidation.ts"
   }
 }

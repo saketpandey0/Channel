@@ -6,7 +6,6 @@ import { v4 as uuidv4} from "uuid";
 import { COOKIE_MAX_AGE } from "../consts"
 import userValidation from "@repo/zod/userValidation";
 import bcrypt from 'bcryptjs';
-import { captureRejectionSymbol } from "events";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
@@ -40,7 +39,12 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
               provider: req.body.provider ||'local',
           },
       });
-      req.session.id = user.id;
+      req.session.user = {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        role: "user",
+      };
       const accessToken = jwt.sign({ user: user.id }, JWT_SECRET, { expiresIn: '1h' });
       const refreshToken = jwt.sign({ user: user.id }, JWT_SECRET, { expiresIn: COOKIE_MAX_AGE });
       res
@@ -93,6 +97,31 @@ export const loginUser = async (req: Request, res: Response): Promise<any> =>  {
       res.status(500).json({ error: "Internal server error" });
     }
 }
+
+
+export const logoutUser = async (req: Request, res: Response): Promise<any> => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ error: "No refresh token provided" });
+  }
+  try {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Failed to destroy session:", err);
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+    });
+    await prisma.refreshToken.deleteMany({
+      where: { token: refreshToken },
+    });
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict' });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 
 export const refreshToken = async (req: Request, res: Response): Promise<any> => {
   const refreshToken = req.cookies.refreshToken;
