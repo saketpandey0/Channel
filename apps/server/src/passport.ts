@@ -50,10 +50,11 @@ export function initPassport() {
           create: {
             email: profile.emails[0].value,
             name: profile.displayName,
+            username: profile.emails[0].value.split('@')[0],
             password: '',
             provider: 'GOOGLE',
             bio: profile._json?.bio || '',
-            image: profile._json?.picture || '',
+            avatar: profile._json?.picture || '',
           },
           update: {
             name: profile.displayName,
@@ -93,10 +94,11 @@ export function initPassport() {
           create: {
             email: primaryEmail!.email,
             name: profile.displayName,
+            username: primaryEmail!.email.split('@')[0],
             password: '',
             provider: 'GITHUB',
             bio: profile._json?.bio || '',
-            image: profile._json?.picture || '',
+            avatar: profile._json?.picture || '',
           },
           update: {
             name: profile.displayName,

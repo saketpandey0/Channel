@@ -33,6 +33,7 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "redis-cli": "^2.1.2",
+    "resend": "^4.6.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

@@ -6,8 +6,9 @@ declare module "express-session"{
             userId: string;
             name: string;
             email: string;
-            role: "user" | "admin";
+            role: "READER" | "EDITOR" | "ADMIN" | "WRITER" | "SUPER_ADMIN";
         };      
         views: number;
     }
 }
+

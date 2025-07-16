@@ -41,7 +41,7 @@ initPassport();
 app.use(passport.initialize());
 app.use(passport.authenticate('session'));
 
-app.use('/api/v1',userRoute);
+app.use('/api/auth', userRoute);
 
 
 const PORT = process.env.PORT || 3000;
