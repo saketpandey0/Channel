@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import {loginUser, registerUser, refreshToken, logoutUser} from '../controller/userController'
+import {loginUser, registerUser, refreshToken, logoutUser, forgetPassword, resetPassword, verifyEmail, resendVerification } from '../controller/userController'
 import passport from 'passport';
+import { verify } from 'crypto';
 
 
 const router = Router();
@@ -9,6 +10,10 @@ router.post('/signup', registerUser);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser)
 router.get('/refresh', refreshToken);
+router.post('/forgot-password', forgetPassword);
+router.post('reset-password', resetPassword);
+router.get('/verify-email/:token', verifyEmail);
+router.post('resend-verification', resendVerification)
 
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 

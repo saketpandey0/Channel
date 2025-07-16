@@ -1,5 +1,4 @@
 {
-  "extends": "../../tsconfig.json", // ✅ points to the new root config
   "compilerOptions": {
     "target": "es2016",
     "module": "node16",

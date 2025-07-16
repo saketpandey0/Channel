@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 @import "tailwindcss";
+
+@theme {
+  --font-serif-custom: 'Bodoni Moda', serif, sans-serif ; 
+  --font-sans-custom: 'Tinos', sans-serif, serif; 
+}
+
+@layer base {
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
 
 @layer base {
   :root {
@@ -109,9 +123,11 @@
     justify-content: justify-between;
   }
 }
-* {
-  font-family: "Bodoni Moda", serif !important;
+
+.font-Bodoni {
+  font-family: var(--font-serif-custom) !important;
 }
+
 
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Hide scrollbar for Chrome, Safari, and Opera */
@@ -120,3 +136,7 @@
   -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
   scrollbar-width: none; /* Hide scrollbar for Firefox */
 }
+
+
+@tailwind components;
+@tailwind utilities;
