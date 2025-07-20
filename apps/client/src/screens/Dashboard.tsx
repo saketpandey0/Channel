@@ -1,42 +1,12 @@
-import { Spotlight } from "./../../../../packages/ui/src/shad/ui/spotlight"
-import { useEffect, useState } from "react";
+import { Spotlight } from "@repo/ui"
 import {motion} from 'motion/react'
+import { Stories } from '../components/Stories'
 
 
 
-export function Dashboard({ tracks }: { tracks: TrackPros[] }) {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+export function Dashboard() {
 
-  const handleMouseMove = (event: MouseEvent) => {
-    const { clientX, clientY } = event;
-    setMousePosition({ x: clientX, y: clientY });
-  };
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
-  const floatingVariant = {
-    initial: { y: 0, opacity: 0 },
-    animate: {
-      y: [0, -10, 0],
-      opacity: 1,
-      transition: {
-        y: {
-          duration: 3,
-          ease: "easeInOut",
-          repeat: Infinity,
-        },
-        opacity: {
-          duration: 0.8,
-          ease: "easeInOut",
-        },
-      },
-    },
-  };
+  
 
   return (
     <div className="flex flex-col gap-4 h-[50vh] md:h-[75vh] size-screen mx-auto justify-center">
@@ -62,7 +32,7 @@ export function Dashboard({ tracks }: { tracks: TrackPros[] }) {
         </p>
       </motion.div>
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20 -z-10" fill="blue" />
-      
+      <Stories></Stories>
     </div>
   );
 }

@@ -1,9 +1,49 @@
 import { motion } from "motion/react"
 import { Button } from "@repo/ui"
 import { Link } from "react-router-dom"
+import { useState } from "react"
+import axios from "axios"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { useNavigate } from 'react-router-dom';
 
-export const EmailAuth = () => {
-    
+
+const BACKEND_URL = "http://localhost:3000/api"
+
+
+export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+
+
+
+    const postData = () => {
+        return axios.post(`${BACKEND_URL}/auth/${type}`, {
+            email, password
+        })
+    }
+
+    const mutation = useMutation({
+        mutationFn: postData,
+        mutationKey: ['mutationpost'],
+        onSuccess: (data)=>{
+            console.log("successful post request", data)
+            navigate('/')
+        }
+    })
+
+    // const AuthFunction = () =>{
+    //     return axios.post(`${BACKEND_URL}/auth/${type}`)
+    // }
+
+    // const {data, isLoading, isError} = useQuery({
+    //     queryKey: ['getUsers'],
+    //     queryFn: AuthFunction
+    // })
+    // console.log(data)
+    // console.log(isLoading)
+    // console.log(isError)
+      
     return (
         <div className="flex flex-col justify-center items-center h-screen">
             <div className="flex flex-col gap-12 justify-between bg-primary/5 p-8 rounded-2xl border border-primary/10 shadow-xl shadow-primary/5 min-w-[40vw]"
@@ -25,21 +65,32 @@ export const EmailAuth = () => {
                     > 
                         <EmailSvg />
                     </motion.div>
-                    <h1 className="font-Bodoni text-xl md:text-2xl font-bold pt-4 md:pt-6">Sign up with email</h1>
-                    <h5 className="pt-2 md:pt-4 text-sm md:text-base">Enter your email address to create an account.</h5>
+                    <h1 className="font-Bodoni text-xl md:text-2xl font-bold pt-4 md:pt-6">{type === 'signin' ? 'Sign in' : 'Sign up'} with email</h1>
                     <div className="w-full flex flex-col justify-start items-start flex pb-6 pt-2 md:pt-4 pl-10 md:pl-20 lg:pl-22 ">
                         <label htmlFor="emailInput" className="text-sm md:text-base">Your email</label>
-                        <input id="emailInput" type="email" className="border p-2 w-4/5 rounded mt-2 flex justify-center items-center" placeholder="Enter your email address" />
+                        <input id="emailInput" type="email" className="border p-2 w-4/5 rounded mt-2 flex justify-center items-center" placeholder="Enter your email address" 
+                        onChange={(e)=> setEmail(e.target.value)}
+                        />
+                        <label htmlFor="emailInput" className="text-sm md:text-base">Password</label>
+                        <input type="password" className="border p-2 w-4/5 rounded mt-2 flex justify-center items-center" 
+                        placeholder="Enter your password" 
+                        onChange={(e)=> setPassword(e.target.value)}
+                        />
                     </div>
                     <div className="flex flex-col justify-center items-center gap-5 text-sm">
-                        <Button variant={'secondary'} className="min-w-[20vw] w-3/5 flex items-center font-medium md:text-md rounded-3xl cursor-pointer bg-black text-white justify-center">Create account</Button>
-                        <Link to={"/auth/signin"} className="flex items-center justify-center cursor-pointer mx-auto "><u>Back to sign up options</u></Link>
-                        <span>Already have an accoount?
-                            {" "} 
-                            <Link to={""}>
-                                <u>Sign in</u>
-                            </Link>
+                        <Button variant={'secondary'} className="min-w-[20vw] w-3/5 flex items-center font-medium md:text-md rounded-3xl cursor-pointer bg-black text-white justify-center"
+                            onClick={()=>mutation.mutate()}
+                        >{type === 'signin' ? 'Continue' : 'Create account'}
+                        </Button>
+                        <Link to={"/auth/signin"} className="flex items-center justify-center cursor-pointer mx-auto "><u>Back to {type === 'signin' ? 'sign in' : 'sign up'} options</u></Link>
+                        {type === 'signup' && (
+                        <span>
+                            Already have an account?{" "}
+                            <Link to="/auth/signin">
+                            <u>Sign in</u>
+                        </Link>
                         </span>
+                        )}
                     </div>
                         <div className="flex flex-col items-center gap-1 py-2 font-normal text-xs text-slate-600/70">
                             <span>This site is protected by reCAPTCHA Enterprise and the</span>
