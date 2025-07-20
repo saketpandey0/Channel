@@ -4,12 +4,11 @@ import { ContentSearch } from "./ContentSearch";
 import { Avatar } from "./Avatar";
 import { useRef, useState } from "react";
 import { UserDropdown } from "./UserDropdown";
-import { ChevronDown } from 'lucide-react';
 
 
 
 export const Appbar = () => {
-  const session = sessionStorage.getItem('session');
+  const userSession = sessionStorage.getItem('session');
   const avatarRef = useRef<HTMLButtonElement>(null);
   const [isUserDropdown, setIsUserDropdown] = useState(false);
 
@@ -39,19 +38,34 @@ export const Appbar = () => {
             height={200}
             className="rounded-full size-10"
           />
-          <span className="text-lg md:text-2xl font-bold tracking-tight text-foreground hidden md:block">
+          <span className="text-lg md:text-2xl font-bold tracking-tight text-foreground hidden md:block text-shadow-lg hover:text-shadow-lg/20 font-Bodoni">
             Channel
           </span>
         </Link>
         <div className="flex items-center gap-8">
+          {userSession && 
           <ContentSearch />
-          <button 
+           && <button 
             ref={avatarRef}
             onClick={()=> setIsUserDropdown((prev) => !prev)}
             className="cursor-pointer"
           >
             <Avatar></Avatar>
-          </button>
+          </button>}
+          {!userSession && 
+            <div className="flex gap-2 mx-auto">
+              <Link to={"/auth/signin"}>
+                <button className="rounded-xl bg-blue-400 p-2 text-white text-md text-shadow-lg/20 shadow-lg hover:shadow-xl/30">
+                  Sign in
+                </button>
+              </Link>
+              <Link to={'/auth/signup'}>
+                <button className="rounded-2xl bg-black p-2 text-white text-md text-shadow-lg/20 shadow-lg hover:shadow-xl/30">
+                  Get started
+                </button>
+              </Link>
+            </div>
+          }
         </div>
         <UserDropdown 
           isOpen={isUserDropdown}

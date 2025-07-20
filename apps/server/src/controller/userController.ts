@@ -6,10 +6,21 @@ import { v4 as uuidv4 } from "uuid";
 import { COOKIE_MAX_AGE } from "../consts"
 import userValidation from "@repo/zod/userValidation";
 import bcrypt from 'bcryptjs';
-import { Resend } from "resend";
-
+import nodemailer from 'nodemailer'
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const resend = new Resend(process.env.RESEND_API_KEY || 'your_resend_api_key');
+
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.APP_PASSWORD,
+  },
+});
 
 
 export const registerUser = async (req: Request, res: Response): Promise<any> => {
@@ -44,17 +55,17 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
     });
 
     const verificationToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' });
-    const {data, error} = await resend.emails.send({
-      from: "YourApp <onboarding@resend.dev>",
-      to: [email],
+
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
+      to: user.email,
       subject: "Verify your email",
+      text: `Your verification token is: ${verificationToken}`,
       html: `<p>Click the link to verify your email:</p>
             <a href="http://localhost:3000/api/auth/verify-email/${verificationToken}">Verify Email</a>`,
-    });
-    if (error) {
-      console.error("Email error:", error);
-      return res.status(500).json({ error: "Failed to send verification email" });
-    }
+    };
+    await transporter.sendMail(mailOptions);
+
 
     req.session.user = {
       userId: user.id,
@@ -184,18 +195,15 @@ export const forgetPassword = async (req: Request, res: Response): Promise<any> 
     const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '15m' });
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-    const { data, error } = await resend.emails.send({
-      from: "Your App <onboarding@resend.dev>",
+    const mailOptions = {
+      from: process.env.EMAIL_USERNAME,
       to: [email],
       subject: "Password Reset",
       html: `<p>You requested a password reset. Click below to reset it:</p>
             <a href="${resetLink}">${resetLink}</a>
             <p>This link will expire in 15 minutes.</p>`,
-    })
-    if (error) {
-      console.error("Email error:", error);
-      return res.status(500).json({ error: "Failed to send email" });
-    }
+    };
+    await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: "Password reset link sent to your email" });
   } catch (err) {
@@ -260,17 +268,14 @@ export const resendVerification = async (req: Request, res: Response) : Promise<
 
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' });
 
-  const { error } = await resend.emails.send({
-    from: "YourApp <onboarding@resend.dev>",
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
     to: [email],
     subject: "Verify your email",
     html: `<p>Click to verify your email:</p>
            <a href="http://localhost:3000/api/auth/verify-email/${token}">Verify Email</a>`,
-  });
-
-  if (error) {
-    return res.status(500).json({ error: "Failed to send verification email" });
-  }
+  };
+  await transporter.sendMail(mailOptions);
 
   res.json({ message: "Verification email sent" });
 };
