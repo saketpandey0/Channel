@@ -9,8 +9,10 @@ import { Providers } from './Providers.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Providers>
-      <Appbar></Appbar>
-      <App />
+      <div className="min-h-screen bg-gray-50">
+        <Appbar />
+        <App />
+      </div>
     </Providers>
   </StrictMode>,
 )

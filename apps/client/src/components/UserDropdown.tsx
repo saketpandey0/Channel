@@ -3,19 +3,47 @@ import { RxPerson } from "react-icons/rx";
 import { MdOutlineBookmarks } from "react-icons/md";
 import { CgNotes } from "react-icons/cg";
 import { TfiBarChart } from "react-icons/tfi";
-import { Separator } from "@repo/ui"
-import { Link } from "react-router-dom";
+import { Separator } from "./shad"
+import { Link, useNavigate } from "react-router-dom";
 import { PiStarFourFill } from "react-icons/pi";
-
+import { useCurrentUser } from "../hooks/useCurUser";
+import { useLogout } from "../hooks/useLogout";
 
 interface userDropdown {
     isOpen: boolean;
     onClose: () => void;
     avatarRef: React.RefObject<HTMLButtonElement | null>;
 }
+const BACKEND_URL = "http://localhost:3000"
+
+
+
+
+function maskEmail(email: string): string {
+  const [username, domain] = email.split('@');
+  if (username.length <= 2) {
+    return `${'*'.repeat(username.length)}@${domain}`;
+  }
+
+  const visible = username.slice(0, 2);
+  const masked = '.'.repeat(Math.max(1, username.length - 2));
+
+  return `${visible}${masked}@${domain}`;
+}
 
 export const UserDropdown: React.FC<userDropdown> = ({ isOpen, onClose, avatarRef}) =>{
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { data: userSession } = useCurrentUser();
+    const { mutate: logout } = useLogout();
+
+    const maskedEmail = userSession ? maskEmail(userSession.email) : "Not signed in";
+
+
+    const handleSignOut = async () => {
+        console.log("Sign out clicked");
+        onClose();
+        logout();
+    }
 
     useEffect(()=>{
         const handleClickOutside = (event: MouseEvent) =>{
@@ -144,9 +172,9 @@ export const UserDropdown: React.FC<userDropdown> = ({ isOpen, onClose, avatarRe
                 ))}
             </div>
             <Separator className="border border-gray-200/30 my-4"></Separator>
-            <div className="flex flex-col text-gray-500 hover:text-black/70">
-                <Link to={"/auth/signout"} className="text-md pl-6">Sign out</Link>
-                <span className="text-xs pl-6">sa...............@gmail.com</span>
+            <div className="flex flex-col justify-start items-start text-gray-500 hover:text-black/70">
+                <button onClick={()=>handleSignOut()} className="cursor-pointer text-md pl-6">Sign out</button>
+                <span className="text-xs pl-6">{maskedEmail}</span>
             </div>
             <Separator className="border border-gray-200/30 my-4"></Separator>
         </div>

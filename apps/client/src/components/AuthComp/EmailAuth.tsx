@@ -1,13 +1,13 @@
 import { motion } from "motion/react"
-import { Button } from "@repo/ui"
+import { Button } from "../shad"
 import { Link } from "react-router-dom"
 import { useState } from "react"
 import axios from "axios"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from 'react-router-dom';
 
 
-const BACKEND_URL = "http://localhost:3000/api"
+const BACKEND_URL = "http://localhost:3000"
 
 
 export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
@@ -18,9 +18,15 @@ export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
 
 
     const postData = () => {
-        return axios.post(`${BACKEND_URL}/auth/${type}`, {
-            email, password
-        })
+        return axios.post(`${BACKEND_URL}/api/auth/${type}`, {
+            email, 
+            password
+        }, {
+            withCredentials: true,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
     }
 
     const mutation = useMutation({
@@ -28,21 +34,18 @@ export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
         mutationKey: ['mutationpost'],
         onSuccess: (data)=>{
             console.log("successful post request", data)
-            navigate('/')
+            if (data.data.user) {
+                // You can store this in context or state management
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+            }
+            navigate('/stories')
+        },
+        onError: (error) => {
+            console.error("Authentication error:", error);
+            // Handle error (show toast, etc.)
         }
     })
 
-    // const AuthFunction = () =>{
-    //     return axios.post(`${BACKEND_URL}/auth/${type}`)
-    // }
-
-    // const {data, isLoading, isError} = useQuery({
-    //     queryKey: ['getUsers'],
-    //     queryFn: AuthFunction
-    // })
-    // console.log(data)
-    // console.log(isLoading)
-    // console.log(isError)
       
     return (
         <div className="flex flex-col justify-center items-center h-screen">

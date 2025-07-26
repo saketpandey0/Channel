@@ -3,45 +3,47 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
-import { prisma } from '@repo/db';
 import { initPassport } from './passport';
 import passport from 'passport';
 import userRoute from './routes/userRoute';
-
-const allowedHosts = process.env.ALLOWED_HOSTS 
-    ? process.env.ALLOWED_HOSTS.split(',')
-    : []
-
+import storyRoute from './routes/storyRoute';
 
 dotenv.config();
+
 const app = express();
+
 app.use(cors({
-    origin: allowedHosts,
-    methods: 'GET,POST,PUT,DELETE',
+    origin: 'http://localhost:5173',
     credentials: true,
-}))
-app.use(cookieParser());            //Todo: {limit: '16kb'} 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Authorization'],
+}));
+
+app.use(cookieParser());             
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+
 app.use(
     session({
         secret: process.env.COOKIE_SECRET || 'your_secret_key',
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             maxAge: parseInt(process.env.COOKIE_MAX_AGE || '3600000'),
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
         }
     })
 )
 
 initPassport();
 app.use(passport.initialize());
-app.use(passport.authenticate('session'));
+app.use(passport.session());
 
 app.use('/api/auth', userRoute);
+app.use('/api/story', storyRoute);
 
 
 const PORT = process.env.PORT || 3000;
