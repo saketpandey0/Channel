@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import {loginUser, registerUser, refreshToken, logoutUser, forgetPassword, resetPassword, verifyEmail, resendVerification } from '../controller/userController'
 import passport from 'passport';
-
+import { getCurrentUser } from '../controller/userController';
 
 const router = Router();
 
 router.post('/signup', registerUser);
 router.post('/signin', loginUser);
 router.post('/logout', logoutUser)
+router.get('/session', getCurrentUser);
 router.get('/refresh', refreshToken);
 router.post('/forgot-password', forgetPassword);
 router.post('reset-password', resetPassword);

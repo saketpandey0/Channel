@@ -4,20 +4,23 @@ import { ContentSearch } from "./ContentSearch";
 import { Avatar } from "./Avatar";
 import { useRef, useState } from "react";
 import { UserDropdown } from "./UserDropdown";
-
+import { useCurrentUser } from "../hooks/useCurUser";
+import { Container } from "./shad/ui/container";
 
 
 export const Appbar = () => {
-  const userSession = sessionStorage.getItem('session');
+  const { data: userSession } = useCurrentUser();
   const avatarRef = useRef<HTMLButtonElement>(null);
   const [isUserDropdown, setIsUserDropdown] = useState(false);
+  console.log("User Session:", userSession);
 
   return (
-    <nav className="sticky mx-auto wrapper top-0 z-30 flex items-center gap-2 py-6 w-full">
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut", type: "spring", damping: 10 }}
+    <Container>
+      <nav className="sticky mx-auto wrapper top-0 z-30 flex items-center gap-2 py-6 w-full">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeInOut", type: "spring", damping: 10 }}
         className="flex w-full justify-between mx-auto bg-secondary/15 shadow-lg shadow-neutral-600/5 backdrop-blur-lg border border-primary/10 p-6 rounded-2xl"
       >
         <Link to={"/"} className="flex items-center gap-1 cursor-pointer">
@@ -43,9 +46,9 @@ export const Appbar = () => {
           </span>
         </Link>
         <div className="flex items-center gap-8">
-          {userSession && 
           <ContentSearch />
-           && <button 
+          {userSession && 
+           <button 
             ref={avatarRef}
             onClick={()=> setIsUserDropdown((prev) => !prev)}
             className="cursor-pointer"
@@ -74,5 +77,6 @@ export const Appbar = () => {
         />
       </motion.div>
     </nav>
+    </Container>
   );
 };

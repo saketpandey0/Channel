@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useDeferredValue } from "react";
 import { Link } from "react-router-dom";
 import { Cross2Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import Fuse from "fuse.js";
-import {Input} from "./../../../../packages/ui/src/shad/ui/input";
+import {Input} from "./shad/ui/input";
 import {motion} from 'motion/react'
 
 

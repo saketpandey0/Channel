@@ -1,5 +1,5 @@
 import {motion} from "motion/react"
-import {Separator} from "@repo/ui";
+import {Separator} from "../shad";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 

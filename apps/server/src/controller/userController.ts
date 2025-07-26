@@ -88,53 +88,85 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
 }
 
 
-
 export const loginUser = async (req: Request, res: Response): Promise<any> => {
+  console.log('Login request body:', req.body);
   const { success } = userValidation.safeParse(req.body);
   if (!success) {
     return res.status(400).json({ error: "Email and password are required" });
-  }
+  } 
   const { email, password } = req.body;
   console.log(req.body);
 
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-    })
+    });
+    
     if (!user) {
-      return res.status(400).json({ error: "User already exists" });
+      return res.status(400).json({ error: "User not found" }); // Fixed message
     }
+    
     if (!user.password) {
       return res.status(400).json({ error: "User has not set a password" });
     }
-    const parasedValidation = await bcrypt.compare(password, user.password)
-    if (!parasedValidation) {
+    
+    const passwordValid = await bcrypt.compare(password, user.password);
+    if (!passwordValid) {
       return res.status(400).json({ error: "Invalid password" });
     }
+
+    // Set session data
     req.session.user = {
       userId: user.id,
       name: user.name,
       email: user.email,
       role: user.role || 'READER'
     };
+    console.log("Session saved:", req.session.user);
+
 
     const accessToken = jwt.sign({ user: user.id }, JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ user: user.id }, JWT_SECRET, { expiresIn: COOKIE_MAX_AGE });
+    
     res
-      .status(201)
+      .status(200) 
       .cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,
-        path: "/refresh",
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: "/",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
-      .header('Authorization', accessToken)
-      .json({ user });
+      .header('Authorization', `Bearer ${accessToken}`) // Added Bearer prefix
+      .json({ 
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role || 'READER'
+        },
+        message: "Login successful"
+      });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+
+export const getCurrentUser = async (req: Request, res: Response): Promise<any> => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    return res.json({ user: req.session.user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 
 export const logoutUser = async (req: Request, res: Response): Promise<any> => {
