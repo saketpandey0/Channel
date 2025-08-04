@@ -8,12 +8,19 @@
   --font-sans-custom: 'Tinos', sans-serif, serif; 
 }
 
-@layer base {
+/* @layer base {
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
 }
+
+body, html, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 
 @layer base {
   :root {
@@ -88,28 +95,6 @@
   }
 }
 
-@layer utilities {
-  .wrapper {
-    height: 100%;
-    width: 100%;
-    max-width: 80rem; /* 7xl = 80rem */
-    padding-left: 1rem; /* px-4 = 1rem */
-    padding-right: 1rem;
-    padding-top: 1rem; /* py-4 = 1rem */
-    padding-bottom: 1rem;
-  }
-  @media (min-width: 768px) {
-    .wrapper {
-      padding-left: 3rem; /* md:px-12 = 3rem */
-      padding-right: 3rem;
-    }
-  }
-  @media (min-width: 1024px) {
-    .wrapper {
-      margin-left: auto; /* lg:mx-auto */
-      margin-right: auto;
-    }
-  }
 
   .flex-center {
     display: flex;
@@ -122,7 +107,7 @@
     align-items: items-center;
     justify-content: justify-between;
   }
-}
+} */
 
 .font-Bodoni {
   font-family: var(--font-serif-custom) !important;
@@ -136,7 +121,7 @@
   -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
   scrollbar-width: none; /* Hide scrollbar for Firefox */
 }
-
+/* 
 
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */

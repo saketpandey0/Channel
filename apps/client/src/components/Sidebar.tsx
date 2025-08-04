@@ -27,7 +27,7 @@ const Sidebar: React.FC = () => {
       {/* Trending Authors */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">  
             <Star className="w-5 h-5 text-yellow-500" />
             Trending Authors
           </h3>

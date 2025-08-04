@@ -90,7 +90,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     <div className="fixed inset-0 z-50" onWheel={handleWheel} onTouchMove={handleTouchMove}>
       <button
         onClick={onClose}
-        className="fixed top-4 right-4 z-50 flex justify-center items-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm transition-colors hover:bg-black/40 text-white"
+        className="fixed top-1 right-4 z-50 flex justify-center items-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm transition-colors hover:bg-black/40 text-white"
       >
         <X className="h-5 w-5" />
       </button>
@@ -108,7 +108,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-60px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-48px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div 
