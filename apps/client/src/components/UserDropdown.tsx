@@ -72,7 +72,7 @@ export const UserDropdown: React.FC<userDropdown> = ({ isOpen, onClose, avatarRe
         {
             icon: <RxPerson />,
             name: "Profile",
-            pageLink: "/page"
+            pageLink: "/profile"
         },
         {
             icon: <MdOutlineBookmarks />,
@@ -135,7 +135,7 @@ export const UserDropdown: React.FC<userDropdown> = ({ isOpen, onClose, avatarRe
     return (
         <div
             ref={dropdownRef}
-            className="absolute top-22 right-0 w-60 bg-white rounded-xl m-1 shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 right-0 w-60 bg-white rounded-xl m-1 shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200"
         >
             <div className="flex flex-col gap-1.5 pt-4 ">
                 {menuItems.map((x, i)=>(

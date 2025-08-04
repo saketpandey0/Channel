@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { Heart, MessageCircle, Bookmark, Share, Clock } from "lucide-react"
+import { PiHandsClappingThin } from "react-icons/pi";
+
 import type { Story } from "../types/story"
 
 interface StoriesProps extends Story {
@@ -22,7 +24,7 @@ const Stories: React.FC<StoriesProps> = ({
 }) => {
   return (
     <article
-      className="relative z-10 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden group cursor-pointer hover:shadow-md"
+      className="relative z-10 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden group cursor-pointer shadow-slate-700/50 hover:shadow-lg bg-slate-100"
       onClick={onClick}
     >
       <div className="flex h-64">
@@ -55,14 +57,14 @@ const Stories: React.FC<StoriesProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 hidden md:block">
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 <span>{readTime}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Heart className="w-4 h-4" />
+              <div className="flex items-center gap-1 ">
+                <PiHandsClappingThin className="w-5 h-5 hover:text-black"/>
                 <span>{claps}</span>
               </div>
               <div className="flex items-center gap-1">

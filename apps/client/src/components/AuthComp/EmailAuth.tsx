@@ -49,7 +49,7 @@ export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
       
     return (
         <div className="flex flex-col justify-center items-center h-screen">
-            <div className="flex flex-col gap-12 justify-between bg-primary/5 p-8 rounded-2xl border border-primary/10 shadow-xl shadow-primary/5 min-w-[40vw]"
+            <div className="flex flex-col gap-12 m-4 justify-between bg-primary/5 p-8 rounded-2xl border border-primary/10 shadow-xl shadow-primary/5 min-w-[40vw]"
             >    
                 <div className="flex flex-col gap-2 justify-center items-center">
                     <motion.div 

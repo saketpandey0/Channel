@@ -15,7 +15,7 @@ export const ContentSearch = () => {
     
 
     return (
-        <motion.div className="relative shadow-lg"
+        <motion.div className="relative shadow-lg hidden md:block"
             initial={{
                 width: "200px"
             }}

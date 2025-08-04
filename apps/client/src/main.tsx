@@ -2,17 +2,34 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { Appbar } from './components/Appbar.tsx'
+import { AppbarClient } from './components/AppbarClient.tsx'
 import { Providers } from './Providers.tsx'
+import { Container } from './components/shad/ui/container.tsx'
+import { Appbar } from './components/Appbar.tsx'
+import { useLocation } from 'react-router-dom'
+
+
+
+const hiddenNavbarRoutes = ['/editor'];
+
+function Layout() {
+  const location = useLocation();
+
+  const shouldHideNavbar = hiddenNavbarRoutes.includes(location.pathname);
+
+  return (
+    <Container className="md:flex md:items-center md:w-auto">
+      {!shouldHideNavbar && <Appbar />}
+    </Container>
+  );
+}
 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Providers>
-      <div className="min-h-screen bg-gray-50">
-        <Appbar />
-        <App />
-      </div>
+      <Layout/>
+      <App />
     </Providers>
   </StrictMode>,
 )

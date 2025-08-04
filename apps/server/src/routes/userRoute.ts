@@ -15,29 +15,29 @@ router.post('reset-password', resetPassword);
 router.get('/verify-email/:token', verifyEmail);
 router.post('resend-verification', resendVerification)
 
-router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(
-  '/auth/google/callback',
+  '/google/callback',
   passport.authenticate('google', {
     failureRedirect: 'http://localhost:5173/auth/signin',
     session: true, 
   }),
   (req, res) => {
-    res.redirect('http://localhost:5173/dashboard'); 
+    res.redirect('http://localhost:5173/'); 
   }
 );
 
-router.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 
 router.get(
-  '/auth/github/callback',
+  '/github/callback',
   passport.authenticate('github', {
     failureRedirect: 'http://localhost:5173/auth/signin',
     session: true,
   }),
   (req, res) => {
-    res.redirect('http://localhost:5173/dashboard');
+    res.redirect('http://localhost:5173/');
   }
 );
 

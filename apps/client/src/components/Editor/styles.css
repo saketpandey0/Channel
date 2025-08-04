@@ -1,0 +1,417 @@
+/* Editor Container Styles */
+.editor-container {
+  margin: 20px auto 20px auto;
+  border-radius: 2px;
+  /* max-width: 600px; */
+  color: #000;
+  position: relative;
+  line-height: 20px;
+  font-weight: 400;
+  text-align: left;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.editor-inner {
+  background: #fff;
+  position: relative;
+}
+
+.editor-input {
+  min-height: 628px;
+  resize: none;
+  font-size: 15px;
+  caret-color: rgb(5, 5, 5);
+  position: relative;
+  tab-size: 1;
+  outline: 0;
+  padding: 15px 10px;
+  caret-color: #444;
+}
+
+.editor-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 15px;
+  left: 10px;
+  font-size: 15px;
+  user-select: none;
+  display: inline-block;
+  pointer-events: none;
+}
+
+/* Toolbar Styles */
+.toolbar {
+  display: flex;
+  margin-bottom: 1px;
+  background: #fff;
+  padding: 4px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  vertical-align: middle;
+  overflow: auto;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border: 1px solid #ccc;
+  border-bottom: none;
+}
+
+.toolbar button.toolbar-item {
+  border: 0;
+  display: flex;
+  background: none;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  justify-content: space-between;
+  background-color: transparent;
+  transition: background-color 0.1s ease;
+}
+
+.toolbar button.toolbar-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.toolbar button.toolbar-item.spaced {
+  margin-right: 2px;
+}
+
+.toolbar button.toolbar-item i.format {
+  background-size: contain;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+  margin-top: 2px;
+  vertical-align: -0.25em;
+  display: flex;
+  opacity: 0.6;
+}
+
+.toolbar button.toolbar-item:disabled .format {
+  opacity: 0.2;
+}
+
+.toolbar button.toolbar-item.active,
+.toolbar button.toolbar-item:hover {
+  background-color: rgba(223, 232, 250, 0.3);
+}
+
+.toolbar button.toolbar-item.active i.format {
+  opacity: 1;
+}
+
+.toolbar .toolbar-item:hover:not([disabled]) {
+  background-color: #eee;
+}
+
+.toolbar .divider {
+  width: 1px;
+  background-color: #eee;
+  margin: 0 4px;
+}
+
+/* Floating Toolbar Styles */
+.floating-text-format-popup {
+  display: flex;
+  background: #fff;
+  padding: 4px;
+  vertical-align: middle;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  opacity: 0;
+  background-color: #fff;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: opacity 0.5s;
+  height: fit-content;
+  will-change: transform;
+}
+
+.floating-text-format-popup button.popup-item {
+  border: 0;
+  display: flex;
+  background: none;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  justify-content: space-between;
+  background-color: transparent;
+  transition: background-color 0.1s ease;
+}
+
+.floating-text-format-popup button.popup-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.floating-text-format-popup button.popup-item.spaced {
+  margin-right: 2px;
+}
+
+.floating-text-format-popup button.popup-item i.format {
+  background-size: contain;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+  margin-top: 2px;
+  vertical-align: -0.25em;
+  display: flex;
+  opacity: 0.6;
+}
+
+.floating-text-format-popup button.popup-item:disabled .format {
+  opacity: 0.2;
+}
+
+.floating-text-format-popup button.popup-item.active,
+.floating-text-format-popup button.popup-item:hover {
+  background-color: rgba(223, 232, 250, 0.3);
+}
+
+.floating-text-format-popup button.popup-item.active i.format {
+  opacity: 1;
+}
+
+.floating-text-format-popup .popup-item:hover:not([disabled]) {
+  background-color: #eee;
+}
+
+/* Format Icons - Using CSS content instead of background images */
+i.format.bold::before {
+  content: "B";
+  font-weight: bold;
+  font-family: serif;
+}
+
+i.format.italic::before {
+  content: "I";
+  font-style: italic;
+  font-family: serif;
+}
+
+i.format.underline::before {
+  content: "U";
+  text-decoration: underline;
+  font-family: serif;
+}
+
+i.format.strikethrough::before {
+  content: "S";
+  text-decoration: line-through;
+  font-family: serif;
+}
+
+i.format.subscript::before {
+  content: "x₂";
+  font-size: 12px;
+}
+
+i.format.superscript::before {
+  content: "x²";
+  font-size: 12px;
+}
+
+i.format.code::before {
+  content: "<>";
+  font-family: monospace;
+  font-size: 14px;
+}
+
+i.format.link::before {
+  content: "🔗";
+  font-size: 14px;
+}
+
+i.format.uppercase::before {
+  content: "ABC";
+  font-size: 10px;
+  font-weight: bold;
+}
+
+i.format.lowercase::before {
+  content: "abc";
+  font-size: 10px;
+}
+
+i.format.capitalize::before {
+  content: "Abc";
+  font-size: 10px;
+}
+
+/* Text Formatting Styles */
+.editor-text-bold {
+  font-weight: bold;
+}
+
+.editor-text-italic {
+  font-style: italic;
+}
+
+.editor-text-underline {
+  text-decoration: underline;
+}
+
+.editor-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.editor-text-underlineStrikethrough {
+  text-decoration: underline line-through;
+}
+
+.editor-text-subscript {
+  font-size: 0.8em;
+  vertical-align: sub !important;
+}
+
+.editor-text-superscript {
+  font-size: 0.8em;
+  vertical-align: super;
+}
+
+.editor-text-code {
+  background-color: rgb(240, 242, 246);
+  padding: 1px 0.25rem;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 94%;
+}
+
+/* Link Styles */
+.editor-link {
+  color: rgb(33, 111, 219);
+  text-decoration: none;
+}
+
+.editor-link:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* List Styles */
+.editor-list-ol {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+}
+
+.editor-list-ul {
+  padding: 0;
+  margin: 0;
+  margin-left: 16px;
+}
+
+.editor-listitem {
+  margin: 8px 32px 8px 32px;
+}
+
+.editor-nested-listitem {
+  list-style-type: none;
+}
+
+/* Quote Styles */
+.editor-quote {
+  margin: 0;
+  margin-left: 20px;
+  margin-bottom: 10px;
+  padding-left: 16px;
+  border-left: 4px solid #ccc;
+  font-style: italic;
+}
+
+/* Heading Styles */
+.editor-heading-h1 {
+  font-size: 24px;
+  color: rgb(5, 5, 5);
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.editor-heading-h2 {
+  font-size: 20px;
+  color: rgb(5, 5, 5);
+  font-weight: 400;
+  margin: 0;
+  margin-top: 10px;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.editor-heading-h3 {
+  font-size: 18px;
+  color: rgb(5, 5, 5);
+  font-weight: 400;
+  margin: 0;
+  margin-top: 10px;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+/* Paragraph Styles */
+.editor-paragraph {
+  margin: 0;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.editor-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Selection Styles */
+.editor-input ::selection {
+  background: rgba(33, 111, 219, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1025px) {
+  .floating-text-format-popup {
+    display: none;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .editor-container {
+    color: #fff;
+  }
+  
+  .editor-inner {
+    background: #1a1a1a;
+  }
+  
+  .toolbar {
+    background: #1a1a1a;
+    border-color: #444;
+  }
+  
+  .floating-text-format-popup {
+    background-color: #1a1a1a;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.8);
+  }
+  
+  .editor-placeholder {
+    color: #666;
+  }
+  
+  .toolbar button.toolbar-item:hover,
+  .floating-text-format-popup button.popup-item:hover {
+    background-color: #333;
+  }
+  
+  .toolbar button.toolbar-item.active,
+  .floating-text-format-popup button.popup-item.active {
+    background-color: rgba(67, 123, 200, 0.3);
+  }
+}

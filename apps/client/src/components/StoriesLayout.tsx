@@ -120,7 +120,7 @@ export const StoriesLayout = () => {
               </div>
             </main>
 
-            <aside className={`w-80 transition-all duration-300`}>
+            <aside className={`w-80 transition-all duration-300 hidden md:block`}>
               <Sidebar />
             </aside>
           </div>
