@@ -5,7 +5,9 @@
   "types": "dist/userValidation.d.ts",    
   "exports": {
     "./userValidation": "./dist/userValidation.js",        
-    "./storyValidation": "./dist/storyValidation.js"        
+    "./storyValidation": "./dist/storyValidation.js",
+    "./commentValidation": "./dist/commentValidation.js",
+    "./publicationValidation": "./dist/publicationValidation.js"
   },
   "scripts": {
     "build": "tsc"

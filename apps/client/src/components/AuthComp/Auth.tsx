@@ -60,7 +60,7 @@ export const Auth = () => {
                         </button>
                         <Link to={`/auth/email/${text === 'signin' ? 'signin' : 'signup'}`}> 
                             <div className="min-w-[10vw] flex gap-2 p-2 font-medium text-lg rounded-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer bg-gradient-to-b from-blue-400 to-blue-700 text-white justify-center">
-                                <img width="28" height="28" src="https://img.icons8.com/fluency-systems-regular/48/new-post.png" alt="new-post"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="text-black mt-0.5 lucide lucide-mail-icon lucide-mail" width="26" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
                                 Sign {text === 'signin' ? 'in' : 'up'} with Email
                             </div>
                         </Link>

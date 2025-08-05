@@ -9,7 +9,7 @@ export const Write = () => {
 
     return (
         <div className="h-screen w-full">
-            <header className="max-w-4xl mx-auto flex flex-row items-center justify-evenly gap-16 pt-2 px-4">
+            <header className="max-w-4xl mx-auto flex flex-row items-center justify-evenly gap-32 pt-2 px-4">
                 <div className="flex flex-row max-w-4xl items-center gap-4">
                     <span className="text-4xl font-serif font-bold text-shadow-blue-500">Channel</span>
                     <span>Draft</span>

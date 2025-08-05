@@ -3,7 +3,7 @@ import { Button } from "../shad"
 import { Link } from "react-router-dom"
 import { useState } from "react"
 import axios from "axios"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from 'react-router-dom';
 
 
@@ -14,6 +14,7 @@ export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
 
 
@@ -35,14 +36,13 @@ export const EmailAuth = ({ type }: { type: "signup" | "signin" }) => {
         onSuccess: (data)=>{
             console.log("successful post request", data)
             if (data.data.user) {
-                // You can store this in context or state management
-                localStorage.setItem('user', JSON.stringify(data.data.user));
+                queryClient.setQueryData(['currentUser'], data.data.user);
+                sessionStorage.setItem('user', JSON.stringify(data.data.user));
             }
             navigate('/stories')
         },
         onError: (error) => {
             console.error("Authentication error:", error);
-            // Handle error (show toast, etc.)
         }
     })
 

@@ -9,6 +9,11 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const storedUser = sessionStorage.getItem('user');
+  if (storedUser) {
+    queryClient.setQueryData(['currentUser'], JSON.parse(storedUser));
+  }
+
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
