@@ -1,6 +1,6 @@
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const GithubStrategy = require('passport-github2').Strategy;
 import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as GithubStrategy } from 'passport-github2';
 import dotenv from 'dotenv';
 import { prisma } from '@repo/db';
 
@@ -12,14 +12,11 @@ interface GithubEmailRes {
 }
 
 dotenv.config();
-const GOOGLE_CLIENT_ID =
-  process.env.GOOGLE_CLIENT_ID || 'your_google_client_id';
-const GOOGLE_CLIENT_SECRET =
-  process.env.GOOGLE_CLIENT_SECRET || 'your_google_client_secret';
-const GITHUB_CLIENT_ID =
-  process.env.GITHUB_CLIENT_ID || 'your_github_client_id';
-const GITHUB_CLIENT_SECRET =
-  process.env.GITHUB_CLIENT_SECRET || 'your_github_client_secret';
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
 export function initPassport() {
   if (
@@ -38,7 +35,7 @@ export function initPassport() {
       {
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: '/auth/google/callback',
+        callbackURL: '/api/auth/google/callback',
       },
       async function (
         accessToken: string,
@@ -46,25 +43,30 @@ export function initPassport() {
         profile: any,
         done: (error: any, user?: any) => void,
       ) {
-        const user = await prisma.user.upsert({
-          create: {
-            email: profile.emails[0].value,
-            name: profile.displayName,
-            username: profile.emails[0].value.split('@')[0],
-            password: '',
-            provider: 'GOOGLE',
-            bio: profile._json?.bio || '',
-            avatar: profile._json?.picture || '',
-          },
-          update: {
-            name: profile.displayName,
-          },
-          where: {
-            email: profile.emails[0].value,
-          },
-        });
+        try {
+          const user = await prisma.user.upsert({
+            create: {
+              email: profile.emails[0].value,
+              name: profile.displayName,
+              username: profile.emails[0].value.split('@')[0],
+              password: '',
+              provider: 'GOOGLE',
+              bio: profile._json?.bio || '',
+              avatar: profile.photos?.[0]?.value || profile._json?.picture || '',
+            },
+            update: {
+              name: profile.displayName,
+              avatar: profile.photos?.[0]?.value || profile._json?.picture || '',
+            },
+            where: {
+              email: profile.emails[0].value,
+            },
+          });
 
-        done(null, user);
+          done(null, user);
+        } catch (error) {
+          done(error, null);
+        }
       },
     ),
   );
@@ -74,7 +76,7 @@ export function initPassport() {
       {
         clientID: GITHUB_CLIENT_ID,
         clientSecret: GITHUB_CLIENT_SECRET,
-        callbackURL: '/auth/github/callback',
+        callbackURL: '/api/auth/github/callback',
       },
       async function (
         accessToken: string,
@@ -82,33 +84,48 @@ export function initPassport() {
         profile: any,
         done: (error: any, user?: any) => void,
       ) {
-        const res = await fetch('https://api.github.com/user/emails', {
-          headers: {
-            Authorization: `token ${accessToken}`,
-          },
-        });
-        const data: GithubEmailRes[] = await res.json();
-        const primaryEmail = data.find((item) => item.primary === true);
+        try {
+          const res = await fetch('https://api.github.com/user/emails', {
+            headers: {
+              Authorization: `token ${accessToken}`,
+              'User-Agent': 'your-app-name',
+            },
+          });
+          
+          if (!res.ok) {
+            throw new Error('Failed to fetch GitHub emails');
+          }
 
-        const user = await prisma.user.upsert({
-          create: {
-            email: primaryEmail!.email,
-            name: profile.displayName,
-            username: primaryEmail!.email.split('@')[0],
-            password: '',
-            provider: 'GITHUB',
-            bio: profile._json?.bio || '',
-            avatar: profile._json?.picture || '',
-          },
-          update: {
-            name: profile.displayName,
-          },
-          where: {
-            email: primaryEmail?.email,
-          },
-        });
+          const data: GithubEmailRes[] = await res.json();
+          const primaryEmail = data.find((item) => item.primary === true);
 
-        done(null, user);
+          if (!primaryEmail) {
+            throw new Error('No primary email found');
+          }
+
+          const user = await prisma.user.upsert({
+            create: {
+              email: primaryEmail.email,
+              name: profile.displayName || profile.username,
+              username: primaryEmail.email.split('@')[0],
+              password: '',
+              provider: 'GITHUB',
+              bio: profile._json?.bio || '',
+              avatar: profile.photos?.[0]?.value || profile._json?.avatar_url || '',
+            },
+            update: {
+              name: profile.displayName || profile.username,
+              avatar: profile.photos?.[0]?.value || profile._json?.avatar_url || '',
+            },
+            where: {
+              email: primaryEmail.email,
+            },
+          });
+
+          done(null, user);
+        } catch (error) {
+          done(error, null);
+        }
       },
     ),
   );
@@ -118,7 +135,7 @@ export function initPassport() {
       return cb(null, {
         id: user.id,
         username: user.username,
-        picture: user.picture,
+        picture: user.avatar || user.picture,
       });
     });
   });

@@ -10,9 +10,22 @@ export const fetchSession = async () => {
       withCredentials: true, 
     });
     console.log("Session user:", response.data.user);
+    if (response.data.user) {
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+    } else {
+        sessionStorage.removeItem('user');
+    }
     return response.data.user;
   } catch (err: any) {
     console.error("Session fetch failed:", err.response?.data || err.message);
+     const cachedUser = sessionStorage.getItem('user');
+    if (cachedUser) {
+        try {
+            return JSON.parse(cachedUser);
+        } catch {
+            sessionStorage.removeItem('user');
+        }
+    }
     return null;
   }
 };

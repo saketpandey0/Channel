@@ -157,11 +157,12 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
 
 export const getCurrentUser = async (req: Request, res: Response): Promise<any> => {
   try {
-    if (!req.session.user) {
+    const user = req.session.user || req.user;
+    if (!user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     
-    return res.json({ user: req.session.user });
+    return res.json({ user: user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });

@@ -45,10 +45,9 @@ export const Appbar = () => {
 
   return (
     <motion.nav
-      className="sticky mx-auto wrapper top-0 z-30 flex items-center gap-0 w-[calc(100%-20px)] px-4"
+      className="sticky mx-auto wrapper top-0 z-30 pt-6 flex items-center gap-0 w-[calc(100%-20px)] px-4"
       animate={{
         y: showAppbar ? 0 : -100,
-        // width: scrolled ? "100%" : "100%",
       }}
       transition={{ duration: 0.3, ease: "linear" }}
     >
