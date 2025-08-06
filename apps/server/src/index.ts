@@ -7,6 +7,7 @@ import { initPassport } from './passport';
 import passport from 'passport';
 import userRoute from './routes/userRoute';
 import storyRoute from './routes/storyRoute';
+import publicationRoute from './routes/publicationRoute';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use(passport.session());
 
 app.use('/api/auth', userRoute);
 app.use('/api/story', storyRoute);
+app.use('/api/publications', publicationRoute)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
