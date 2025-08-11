@@ -7,7 +7,6 @@ import { calcReadTime } from "../utils/calcReadTime";
 
 
 export const createStory = async (req: Request, res: Response): Promise<any> => {
-
     try {
         const userId = req.session?.user?.userId;
         if (!userId) {
