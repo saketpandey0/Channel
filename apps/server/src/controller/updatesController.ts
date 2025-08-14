@@ -21,8 +21,7 @@ export const getUserNotifications = async (req: Request, res: Response): Promise
 
     const where: any = { userId };
     if (unreadOnly) where.isRead = false;
-
-    // Try cache for first page of all notifications
+    // caching notifications 
     let notifications;
     if (page === 1 && !unreadOnly) {
       const cacheKey = `notifications:${userId}:${page}:${limit}`;
@@ -168,7 +167,6 @@ export const deleteNotification = async (req: Request, res: Response): Promise<a
       where: { id }
     });
 
-    // Clear notifications cache
     await redis.del(`notifications:${userId}:*`);
 
     res.status(200).json({ message: "Notification deleted successfully" });
@@ -228,8 +226,7 @@ export const sendNewsletter = async (req: Request, res: Response): Promise<any> 
       }
     });
 
-    // Here you would integrate with email service (SendGrid, Mailgun, etc.)
-    // For now, we'll create notifications for subscribers
+    // todo to add notification system
     const notificationPromises = subscribers.map(subscription =>
       prisma.notification.create({
         data: {
@@ -299,7 +296,7 @@ export const getPublicationSubscribers = async (req: Request, res: Response): Pr
             username: true,
             name: true,
             avatar: true,
-            email: isOwner, // Only show email to owner
+            email: isOwner, 
           }
         }
       },
@@ -340,7 +337,6 @@ export const subscribeToPublication = async (req: Request, res: Response): Promi
       return res.status(400).json({ error: "This publication doesn't have a newsletter" });
     }
 
-    // Check if already subscribed
     const existingSubscription = await prisma.newsletterSubscription.findUnique({
       where: {
         userId_publicationId: {

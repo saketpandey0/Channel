@@ -195,7 +195,6 @@ export const getDashboardAnalytics = async (req: Request, res: Response): Promis
       averageViewsPerStory: totalStats._count.id > 0 ? (totalStats._sum.viewCount || 0) / totalStats._count.id : 0,
     };
 
-    // Cache for 10 minutes
     await redis.setex(cacheKey, 600, JSON.stringify(analytics));
 
     res.status(200).json({ analytics });
@@ -206,7 +205,6 @@ export const getDashboardAnalytics = async (req: Request, res: Response): Promis
 };
 
 
-// GET /api/analytics/publications/:id - Publication analytics
 export const getPublicationAnalytics = async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
@@ -323,7 +321,6 @@ export const getPublicationAnalytics = async (req: Request, res: Response): Prom
   }
 };
 
-// GET /api/analytics/earnings - Revenue analytics
 export const getEarningsAnalytics = async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.session.user?.userId;
