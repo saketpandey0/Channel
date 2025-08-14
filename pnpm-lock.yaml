@@ -301,6 +301,9 @@ importers:
 
   apps/web:
     dependencies:
+      axios:
+        specifier: ^1.10.0
+        version: 1.10.0
       motion:
         specifier: ^12.23.0
         version: 12.23.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

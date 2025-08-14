@@ -1,9 +1,12 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
-export const requireAdmin = (req: Request, res: Response, next: any) => {
+export const requireAdmin: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   const userRole = req.session.user?.role;
+
   if (!userRole || !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
-    return res.status(403).json({ error: "Admin access required" });
+    res.status(403).json({ error: "Admin access required" });
+    return;
   }
+
   next();
 };

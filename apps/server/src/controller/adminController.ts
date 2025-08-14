@@ -1,5 +1,5 @@
 import { prisma } from "@repo/db";
-import { Request, Response } from 'express';
+import { Request, RequestHandler, Response } from 'express';
 import { getRedisClient } from '../utils/RedisClient';
 import { requireAdmin } from '../middlewares/adminMiddleware';
 import { stat } from "fs";
@@ -15,7 +15,7 @@ type EngagementStats = {
 };
 
 
-export const getAdminUsers = [
+export const getAdminUsers: RequestHandler[] = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
         try {
@@ -82,7 +82,6 @@ export const getAdminUsers = [
     }
 ];
 
-// PUT /api/admin/users/:id/status - Suspend/activate user
 export const updateUserStatus = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -106,7 +105,6 @@ export const updateUserStatus = [
                 }
             });
 
-            // Clear user-related caches
             await redis.del(`user:${id}`);
             await redis.del(`analytics:dashboard:${id}`);
 
@@ -118,7 +116,6 @@ export const updateUserStatus = [
     }
 ];
 
-// DELETE /api/admin/users/:id - Delete user account
 export const deleteUserAccount = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -129,7 +126,6 @@ export const deleteUserAccount = [
                 where: { id }
             });
 
-            // Clear all user-related caches
             const keys = await redis.keys(`*:${id}:*`);
             if (keys.length > 0) {
                 await redis.del(...keys);
@@ -143,7 +139,6 @@ export const deleteUserAccount = [
     }
 ];
 
-// GET /api/admin/stories - Manage all stories
 export const getAdminStories = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -213,7 +208,6 @@ export const getAdminStories = [
     }
 ];
 
-// PUT /api/admin/stories/:id/status - Moderate stories
 export const moderateStory = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -230,7 +224,6 @@ export const moderateStory = [
                 data: { status },
             });
 
-            // Clear story-related caches
             await redis.del(`story:${id}`);
             await redis.del(`related:${id}:*`);
 
@@ -242,7 +235,6 @@ export const moderateStory = [
     }
 ];
 
-// DELETE /api/admin/stories/:id - Remove stories
 export const removeStory = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -253,7 +245,6 @@ export const removeStory = [
                 where: { id }
             });
 
-            // Clear story-related caches
             await redis.del(`story:${id}`);
             await redis.del(`related:${id}:*`);
 
@@ -265,7 +256,6 @@ export const removeStory = [
     }
 ];
 
-// GET /api/admin/publications - Manage publications
 export const getAdminPublications = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -315,7 +305,6 @@ export const getAdminPublications = [
 ];
 
 
-// PUT /api/admin/publications/:id/status - Moderate publications
 export const moderatePublication = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -328,7 +317,6 @@ export const moderatePublication = [
                 data: { isPublic },
             });
 
-            // Clear publication-related caches
             await redis.del(`publication:${id}`);
 
             res.status(200).json({ publication: updatedPublication });
@@ -338,7 +326,6 @@ export const moderatePublication = [
         }
     }
 ];
-
 
 export const getAdminReports = [
     requireAdmin,
@@ -419,12 +406,11 @@ export const getAdminReports = [
             });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 ];
 
-// PUT /api/admin/reports/:id/resolve - Resolve reports
 export const resolveReport = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -478,12 +464,11 @@ export const resolveReport = [
             res.status(200).json({ report });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 ];
 
-// GET /api/admin/analytics - Platform analytics
 export const getAdminAnalytics = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -572,18 +557,16 @@ export const getAdminAnalytics = [
                 growth: monthlyGrowth,
             };
 
-            // Cache for 30 minutes
             await redis.setex(cacheKey, 1800, JSON.stringify(analytics));
 
             res.status(200).json({ analytics });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 ];
 
-// GET /api/admin/system-health - System monitoring
 export const getSystemHealth = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -595,17 +578,14 @@ export const getSystemHealth = [
                 return res.status(200).json({ health: JSON.parse(cachedHealth) });
             }
 
-            // Database health check
             const dbStart = Date.now();
             await prisma.$queryRaw`SELECT 1`;
             const dbLatency = Date.now() - dbStart;
 
-            // Redis health check
             const redisStart = Date.now();
             await redis.ping();
             const redisLatency = Date.now() - redisStart;
 
-            // System metrics
             const health = {
                 database: {
                     status: dbLatency < 100 ? 'healthy' : dbLatency < 500 ? 'warning' : 'critical',
@@ -622,13 +602,12 @@ export const getSystemHealth = [
                 timestamp: new Date(),
             };
 
-            // Cache for 1 minute
             await redis.setex(cacheKey, 60, JSON.stringify(health));
 
             res.status(200).json({ health });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 ];
