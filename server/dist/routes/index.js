@@ -1,0 +1,30 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminRoute_1 = __importDefault(require("./adminRoute"));
+const userRoute_1 = __importDefault(require("./userRoute"));
+const storyRoute_1 = __importDefault(require("./storyRoute"));
+const publicationRoute_1 = __importDefault(require("./publicationRoute"));
+const updatesRoute_1 = __importDefault(require("./updatesRoute"));
+const featuresRoute_1 = __importDefault(require("./featuresRoute"));
+const anlyticsRoute_1 = __importDefault(require("./anlyticsRoute"));
+const contentRoute_1 = __importDefault(require("./contentRoute"));
+const router = (0, express_1.Router)();
+router.use((req, res, next) => {
+    console.log("Session ID:", req.sessionID);
+    console.log("Session Data:", req.session);
+    console.log("Passport User:", req.user);
+    next();
+});
+router.use("/auth", userRoute_1.default);
+router.use("/story", storyRoute_1.default);
+router.use("/publication", publicationRoute_1.default);
+router.use("/admin", adminRoute_1.default);
+router.use("/", updatesRoute_1.default);
+router.use("/analytics", anlyticsRoute_1.default);
+router.use("/feature", featuresRoute_1.default);
+router.use("/", contentRoute_1.default);
+exports.default = router;

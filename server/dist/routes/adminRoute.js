@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminController_1 = require("../controller/adminController");
+const router = (0, express_1.Router)();
+router.get('/users', ...adminController_1.getAdminUsers);
+router.put('/users/:id/status', ...adminController_1.updateUserStatus);
+router.delete('/users/:id', ...adminController_1.deleteUserAccount);
+router.get('/stories', ...adminController_1.getAdminStories);
+router.put('/stories/:id/status', ...adminController_1.moderateStory);
+router.delete('/stories/:id', ...adminController_1.removeStory);
+router.get('/publications', ...adminController_1.getAdminPublications);
+router.put('/publications/:id/status', ...adminController_1.moderatePublication);
+router.get('/reports', adminController_1.getAdminReports);
+router.put('/reports/:id/resolve', ...adminController_1.resolveReport);
+router.get('/analytics', ...adminController_1.getAdminAnalytics);
+router.get('/system-health', ...adminController_1.getSystemHealth);
+exports.default = router;
