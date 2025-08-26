@@ -1179,3 +1179,54 @@ export const getUserBookmarks = async (req: Request, res: Response): Promise<any
         res.status(500).json({error: error.message});
     }
 }
+
+export const contentSearch = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { q } = req.query as { q?: string };
+        if(!q){
+            return res.status(400).json({error: "Search query is required"});
+        }
+
+        const [stories, people, publications, topics] = await Promise.all([
+            prisma.story.findMany({
+                where: {
+                    title: {
+                        contains: q,
+                        mode: "insensitive"
+                    }
+                },
+                take: 10
+            }),
+            prisma.user.findMany({
+                where: {
+                    name: {
+                        contains: q,
+                        mode: "insensitive"
+                    }
+                },
+                take: 10
+            }),
+            prisma.publication.findMany({
+                where: {
+                    name: {
+                        contains: q,
+                        mode: "insensitive"
+                    }
+                },
+                take: 10
+            }),
+            prisma.tag.findMany({
+                where: {
+                    name: {
+                        contains: q, mode: 'insensitive'
+                    }
+                },
+                take: 10
+            })
+        ]);
+        return res.status(200).json({stories, people, publications, topics});
+    } catch (err: any){
+        console.error("Error while search", err);
+        return res.status(500).json({error: "Internal Server Error"});
+    }
+}

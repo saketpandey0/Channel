@@ -33,7 +33,9 @@ const BookmarksTab: React.FC<BookmarksTabProps> = ({
       <div className="p-6 text-center">
         <p className="text-gray-600">No bookmarks yet.</p>
         <p className="text-sm text-gray-500 mt-2">
-          Bookmark stories to read them later.
+          Make sure all words are spelled correctly.
+          Try different keywords.
+          Try more general keywords.
         </p>
       </div>
     );

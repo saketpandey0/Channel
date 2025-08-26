@@ -11,7 +11,7 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-  user,
+  result,
   tabs,
   activeTab,
   onTabChange,
@@ -25,8 +25,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <Avatar className="bg-black h-18 w-18 pb-4"></Avatar>
           </div>
           <h1 className="text-4xl font-bold text-gray-900">
-            {user.name}
-            {/* SAKET PANDEY */}
+            <span className="bg-gradient-to-bl from -z-10 to -z-0 bg-clip-text text-transparent">
+              {result.title}
           </h1>
           {user.isVerified && (
             <span className="text-2xl text-blue-500">✓</span>

@@ -14,23 +14,22 @@ interface ResultSidebarProps {
 
 const ResultSidebar: React.FC<ResultSidebarProps> = ({ user, viewContext, onEditProfile }) => {
   const { isFollowing, toggleFollow, isLoading } = useFollowUser(user.id, viewContext.isFollowing);
-  const editRef = useRef<HTMLButtonElement>(null);
 
-  const footerItems = [
-    { name: "Help", pageLink: "/help" },
-    { name: "Status", pageLink: "/status" },
-    { name: "About", pageLink: "/about" },
-    { name: "Careers", pageLink: "/careers" },
-    { name: "Press", pageLink: "/press" },
-    { name: "Blog", pageLink: "/blog" },
-    { name: "Privacy", pageLink: "/privacy" },
-  ];
+  // const footerItems = [
+  //   { name: "Help", pageLink: "/help" },
+  //   { name: "Status", pageLink: "/status" },
+  //   { name: "About", pageLink: "/about" },
+  //   { name: "Careers", pageLink: "/careers" },
+  //   { name: "Press", pageLink: "/press" },
+  //   { name: "Blog", pageLink: "/blog" },
+  //   { name: "Privacy", pageLink: "/privacy" },
+  // ];
 
-  const bottomFooterItems = [
-    { name: "Rules", pageLink: "/rules" },
-    { name: "Terms", pageLink: "/terms" },
-    { name: "Text to Speech", pageLink: "/text-to-speech" }
-  ];
+  // const bottomFooterItems = [
+  //   { name: "Rules", pageLink: "/rules" },
+  //   { name: "Terms", pageLink: "/terms" },
+  //   { name: "Text to Speech", pageLink: "/text-to-speech" }
+  // ];
 
   const formatCount = (count: number): string => {
     if (typeof count === 'undefined') {

@@ -26,6 +26,7 @@
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "fusejs": "^1.4.3",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
