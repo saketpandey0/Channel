@@ -2,7 +2,7 @@ import { ReactLenis } from "lenis/react";
 import { useState, useRef } from "react";
 import { AnimatePresence } from "motion/react";
 import ProfileHeader from "./ContentHeader";
-import ProfileSidebar from "./ResultSidebar";
+import ResultSidebar from "./ResultSidebar";
 import ResultContent from "./ResultContent";
 import ContentPreview from "../story/ContentPreview";
 import { useProfileContext } from "../../hooks/useProfileContext";
@@ -37,7 +37,7 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username }) => {
     <ReactLenis root>
       <div className="min-h-screen">
         <div className="mx-auto max-w-7xl rounded-xl border border-gray-100 bg-slate-100 px-4 py-8 shadow-sm sm:px-6 lg:px-8">
-          <div className="flex gap-8">
+          {/* <div className="flex gap-8">
             <main className="max-w-4xl flex-1">
               <ProfileHeader
                 user={profileUser}
@@ -56,13 +56,12 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username }) => {
             </main>
 
             <aside className="w-80 transition-all duration-300 hidden md:block">
-              <ProfileSidebar
+              <ResultSidebar
                 user={profileUser}
                 viewContext={viewContext}
-                onEditProfile={handleEditProfile}
               />
             </aside>
-          </div>
+          </div> */}
         </div>
 
         <AnimatePresence>

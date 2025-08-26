@@ -1,9 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import StoriesTab from "./tabs/StoriesTab";
-import NotificationsTab from "./tabs/NotificationsTab";
-import BookmarksTab from "./tabs/BookmarksTab";
-import AboutTab from "./tabs/AboutTab";
+import NotificationsTab from "./tabs/UserTab";
+import BookmarksTab from "./tabs/PublicationsTab";
+import AboutTab from "./tabs/TagTab";
 import type { ProfileUser, ProfileViewContext } from "../../types/profile";
 
 interface ProfileContentProps {

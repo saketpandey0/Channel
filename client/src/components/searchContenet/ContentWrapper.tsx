@@ -1,8 +1,9 @@
 import { Navigate, useParams } from "react-router-dom"
-import { ProfileLayout } from "./ProfileLayout";
+import { ProfileLayout } from "./ContentLayout";
+import { Content } from "@radix-ui/react-dropdown-menu";
 
 
-export const ProfileWrapper = () => {
+const ContentWrapper = () => {
     const {username, tab} = useParams<{username: string, tab: string}>();
     console.log("logging username: ",username);
     if(!username){
@@ -15,10 +16,12 @@ export const ProfileWrapper = () => {
 
 
     return (
-        <ProfileLayout
+        <ContentLayout
             username={username}
-            // defaultTab={tab}
+            defaultTab={tab}
         />
         
     )
 }
+
+export default ContentWrapper

@@ -126,7 +126,7 @@ export const ContentSearch = () => {
             window.open(`/blog/${selectedBlog.slug}`, "_blank");
           }
           break;
-        case "Escape":
+        case "Escape":                                                                                                                                                        
           setShowResults(false);
           setIsFocused(false);
           inputRef.current?.blur();

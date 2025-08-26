@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import { clapStory, getStoryClaps, removeClap, storyClapStatus, addComment, getComments, updateComment, deleteComment, replycomment, clapComment, removeClapComment, followUser, followStatus, unfollowUser, getUserFollowers,getUserFollowing, bookmarkStory, removeBookmark, getUserBookmarks } from '../controller/featuresController';
+import { clapStory, getStoryClaps, removeClap, storyClapStatus, addComment, getComments, updateComment, deleteComment, replycomment, clapComment, removeClapComment, followUser, followStatus, unfollowUser, getUserFollowers,getUserFollowing, bookmarkStory, removeBookmark, getUserBookmarks, contentSearch } from '../controller/featuresController';
 
 const router = Router();
 
@@ -24,6 +24,8 @@ router.get("/following/:id", getUserFollowing);
 
 router.post("/story/:id/bookmark", bookmarkStory);
 router.delete("/story/:id/bookmark", removeBookmark);
-router.get("/user/:id/bookmarks", getUserBookmarks);     
+router.get("/user/:id/bookmarks", getUserBookmarks); 
+
+router.get("/search/:q", contentSearch);
 
 export default router;

@@ -179,3 +179,15 @@ export const getUserBookmarks = async (userId: string) => {
     });
     return response.data;
 }
+
+export const contentSearch = async (q: string) => {
+    try {
+        const response = await axios.get(`${BACKEND_URL}/api/feature/search/${q}`, {
+            withCredentials: true,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error while searching content", error);
+        throw error;    
+    }
+}
