@@ -1,0 +1,540 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String       @id @default(cuid())
+  username        String       @unique
+  email           String       @unique
+  password        String?
+  name            String
+  bio             String?
+  avatar          String?
+  isVerified      Boolean      @default(false)
+  isEmailVerified Boolean      @default(false)
+  provider        AuthProvider @default(EMAIL)
+  role            UserRole     @default(READER)
+  status          UserStatus   @default(ACTIVE)
+  location        String?
+  website         String?
+  twitter         String?
+  linkedin        String?
+  github          String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastActiveAt DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+  stories       Story[]        @relation("AuthorStories")
+  drafts        Story[]        @relation("DraftStories")
+
+  followers    Follow[]      @relation("FollowedUser")
+  following    Follow[]      @relation("FollowerUser")
+  bookmarks    Bookmark[]
+  comments     Comment[]
+  claps        Clap[]
+  commentClaps clapComment[]
+
+  ownedPublications  Publication[]       @relation("PublicationOwner")
+  editorPublications PublicationEditor[]
+  writerPublications PublicationWriter[]
+  submittedStories   StorySubmission[]
+
+  notifications  Notification[]
+  readingHistory ReadingHistory[]
+
+  newsletterSubscriptions NewsletterSubscription[]
+
+  reports         Report[] @relation("ReportedBy")
+  reportedContent Report[] @relation("ReportedUser")
+
+  media Media[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("refresh_tokens")
+}
+
+model Story {
+  id               String  @id @default(cuid())
+  slug             String  @unique
+  title            String
+  subtitle         String?
+  content          String // Rich text content
+  plainTextContent String? // For search indexing
+  excerpt          String? // Short description
+  coverImage       String?
+
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+
+  status      StoryStatus @default(DRAFT)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  authorId      String
+  author        User    @relation("AuthorStories", fields: [authorId], references: [id])
+  draftAuthorId String?
+  draftAuthor   User?   @relation("DraftStories", fields: [draftAuthorId], references: [id])
+
+  publicationId    String?
+  publication      Publication?      @relation(fields: [publicationId], references: [id])
+  submissionStatus SubmissionStatus?
+
+  // Content Properties
+  readTime  Int    @default(0) // in minutes
+  wordCount Int    @default(0)
+  language  String @default("en")
+
+  viewCount     Int @default(0)
+  clapCount     Int @default(0)
+  commentCount  Int @default(0)
+  bookmarkCount Int @default(0)
+
+  isPremium Boolean @default(false)
+  price     Float? // For paid stories
+
+  isPublic      Boolean @default(true)
+  allowComments Boolean @default(true)
+  allowClaps    Boolean @default(true)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastViewedAt DateTime?
+
+  tags           StoryTag[]
+  comments       Comment[]
+  claps          Clap[]
+  bookmarks      Bookmark[]
+  submissions    StorySubmission[]
+  readingHistory ReadingHistory[]
+  notifications  Notification[]
+  reports        Report[]          @relation("ReportedStory")
+  versions       StoryVersion[]
+  media          StoryMedia[]
+
+  @@map("stories")
+}
+
+model StoryVersion {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  version   Int
+  title     String
+  content   String
+  changes   String?
+  createdAt DateTime @default(now())
+
+  @@unique([storyId, version])
+  @@map("story_versions")
+}
+
+model Publication {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  bio         String?
+  logo        String?
+  coverImage  String?
+
+  // Owner & Management
+  ownerId String
+  owner   User   @relation("PublicationOwner", fields: [ownerId], references: [id])
+
+  isPublic         Boolean @default(true)
+  allowSubmissions Boolean @default(true)
+  requireApproval  Boolean @default(true)
+
+  website  String?
+  twitter  String?
+  facebook String?
+  linkedin String?
+  email    String?
+
+  hasNewsletter       Boolean @default(false)
+  newsletterFrequency String? // daily, weekly, monthly
+
+  followerCount Int @default(0)
+  storyCount    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stories     Story[]
+  editors     PublicationEditor[]
+  writers     PublicationWriter[]
+  submissions StorySubmission[]
+  subscribers NewsletterSubscription[]
+  tags        PublicationTag[]
+
+  @@map("publications")
+}
+
+model PublicationEditor {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          EditorRole  @default(EDITOR)
+  addedAt       DateTime    @default(now())
+
+  @@unique([publicationId, userId])
+  @@map("publication_editors")
+}
+
+model PublicationWriter {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedAt       DateTime    @default(now())
+
+  @@unique([publicationId, userId])
+  @@map("publication_writers")
+}
+
+model StorySubmission {
+  id            String      @id @default(cuid())
+  storyId       String
+  story         Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  submittedById String
+  submittedBy   User        @relation(fields: [submittedById], references: [id])
+
+  status   SubmissionStatus @default(PENDING)
+  message  String? // Submission message
+  response String? // Editor response
+
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+
+  @@unique([storyId, publicationId])
+  @@map("story_submissions")
+}
+
+model Tag {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  image       String?
+  color       String? // For UI theming
+
+  // Stats
+  storyCount    Int @default(0)
+  followerCount Int @default(0)
+
+  stories      StoryTag[]
+  publications PublicationTag[]
+
+  createdAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+model StoryTag {
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, tagId])
+  @@map("story_tags")
+}
+
+model PublicationTag {
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  tagId         String
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([publicationId, tagId])
+  @@map("publication_tags")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("FollowerUser", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("FollowedUser", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Clap {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storyId])
+  @@map("claps")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storyId])
+  @@map("bookmarks")
+}
+
+model Comment {
+  id       String  @id @default(cuid())
+  content  String
+  isEdited Boolean @default(false)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  storyId  String
+  story    Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  // Nested Comments
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+
+  // Stats
+  clapCount  Int @default(0)
+  replyCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commentClaps clapComment[]
+  reports      Report[]      @relation("ReportedComment")
+
+  @@map("comments")
+}
+
+model clapComment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@map("clap_comments")
+}
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  title   String
+  message String
+  isRead  Boolean          @default(false)
+
+  storyId String?
+  story   Story?  @relation(fields: [storyId], references: [id])
+
+  data Json?
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model ReadingHistory {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  readingTime Int     @default(0)
+  progress    Float   @default(0)
+  isCompleted Boolean @default(false)
+
+  lastReadAt DateTime @default(now())
+
+  @@unique([userId, storyId])
+  @@map("reading_history")
+}
+
+model NewsletterSubscription {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  isActive       Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@unique([userId, publicationId])
+  @@map("newsletter_subscriptions")
+}
+
+model Report {
+  id           String @id @default(cuid())
+  reportedById String
+  reportedBy   User   @relation("ReportedBy", fields: [reportedById], references: [id])
+
+  // What's being reported
+  storyId   String?
+  story     Story?   @relation("ReportedStory", fields: [storyId], references: [id])
+  commentId String?
+  comment   Comment? @relation("ReportedComment", fields: [commentId], references: [id])
+  userId    String?
+  user      User?    @relation("ReportedUser", fields: [userId], references: [id])
+
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(PENDING)
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@map("reports")
+}
+
+model Media {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  path         String
+  type         MediaType
+
+  uploadedBy String
+  uploader   User         @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  stories    StoryMedia[]
+
+  @@map("media")
+}
+
+model StoryMedia {
+  id      String @id @default(cuid())
+  order   Int    @default(0)
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, mediaId])
+  @@map("article_media")
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GITHUB
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+}
+
+enum UserRole {
+  READER
+  WRITER
+  EDITOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum StoryStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  UNLISTED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+enum EditorRole {
+  EDITOR
+  SENIOR_EDITOR
+  MANAGING_EDITOR
+}
+
+enum NotificationType {
+  STORY_PUBLISHED
+  COMMENT_RECEIVED
+  CLAP_RECEIVED
+  FOLLOWER_GAINED
+  STORY_ACCEPTED
+  STORY_REJECTED
+  NEWSLETTER_SENT
+  MENTION_RECEIVED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  COPYRIGHT_VIOLATION
+  HATE_SPEECH
+  MISINFORMATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}

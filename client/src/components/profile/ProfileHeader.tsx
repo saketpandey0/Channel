@@ -1,0 +1,87 @@
+import { Avatar } from "../shad";
+import { motion } from "motion/react";
+import type { ProfileUser, ProfileViewContext, ProfileTabConfig } from "../../types/profile";
+
+interface ProfileHeaderProps {
+  user: ProfileUser;
+  tabs: ProfileTabConfig[];
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+  viewContext: ProfileViewContext;
+}
+
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  user,
+  tabs,
+  activeTab,
+  onTabChange,
+  viewContext
+}) => {
+  return (
+    <div className="rounded-xl border p-6 shadow-sm shadow-slate-700/50 hover:shadow-lg">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="block md:hidden">
+            <Avatar className="bg-black h-18 w-18 pb-4"></Avatar>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900">
+            {user.name}
+            {/* SAKET PANDEY */}
+          </h1>
+          {user.isVerified && (
+            <span className="text-2xl text-blue-500">✓</span>
+          )}
+        </div>
+        {viewContext.isOwner ? (
+          <button className="mb-10 cursor-pointer border-none text-4xl text-black">
+            ...
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            {viewContext.canMessage && (
+              <button className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50">
+                Message
+              </button>
+            )}
+            {viewContext.canReport && (
+              <button className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">
+                •••
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {user.bio && (
+        <p className="text-gray-600 mb-4">{user.bio}</p>
+      )}
+
+      <div className="flex flex-row gap-6 text-sm font-semibold">
+        {tabs.filter(tab => tab.visible).map((tab) => (
+          <motion.span
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`cursor-pointer text-gray-700 hover:text-black relative ${
+              activeTab === tab.id ? "text-black" : ""
+            }`}
+            whileHover={{ y: -1 }}
+          >
+            {tab.name}
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="ml-1 text-gray-500">({tab.count})</span>
+            )}
+            {activeTab === tab.id && (
+              <motion.div
+                className="absolute -bottom-2 left-0 right-0 h-1 bg-black rounded-full"
+                layoutId="activeTab"
+              />
+            )}
+          </motion.span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+export default ProfileHeader;
