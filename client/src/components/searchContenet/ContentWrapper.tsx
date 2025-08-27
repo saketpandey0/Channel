@@ -1,27 +1,43 @@
-import { Navigate, useParams } from "react-router-dom"
-import { ProfileLayout } from "./ContentLayout";
-import { Content } from "@radix-ui/react-dropdown-menu";
+import { useState } from "react";
+import type { TabType } from "../../types/searchResult";
+import ContentHeader from "./ContentHeader";
+import ContentLayout from "./ContentLayout";
+import ContentSidebar from "./ContentSidebar";
+import { useLocation } from "react-router-dom";
 
 
-const ContentWrapper = () => {
-    const {username, tab} = useParams<{username: string, tab: string}>();
-    console.log("logging username: ",username);
-    if(!username){
-        return <div>Invalid User Profile URL</div>
-    }
+const ContentWrapper: React.FC = () => {
+  const location = useLocation();
+  const { searchResults, searchQuery, activeTab: initialTab } = location.state || {};
 
-    if(!tab){
-        return <Navigate to={`/${username}/about`} replace />;
-    }
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'stories');
+  const [isLoading, setIsLoading] = useState(false);
+  
 
-
-    return (
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ContentHeader
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        searchResults={searchResults}
+        searchQuery={searchQuery}
+      />
+      
+      <div className="max-w-6xl mx-auto flex">
         <ContentLayout
-            username={username}
-            defaultTab={tab}
+          activeTab={activeTab}
+          searchResults={searchResults}
+          isLoading={isLoading}
+          searchQuery={searchQuery}
         />
         
-    )
-}
+        <ContentSidebar
+          searchResults={searchResults}
+          activeTab={activeTab}
+        />
+      </div>
+    </div>
+  );
+};
 
-export default ContentWrapper
+export default ContentWrapper;

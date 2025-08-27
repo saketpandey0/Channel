@@ -71,6 +71,7 @@ const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         yield transporter.sendMail(mailOptions);
         const payload = {
             userId: user.id,
+            username: user.username,
             name: user.name,
             email: user.email,
             role: user.role || "READER",
@@ -114,6 +115,7 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const payload = {
             userId: user.id,
+            username: user.username,
             name: user.name,
             email: user.email,
             role: user.role || "READER",
@@ -150,9 +152,12 @@ exports.loginUser = loginUser;
 const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.session.user || req.user;
+        console.log("Current user from session:", req.session.user);
+        console.log("Current user from req.user:", req.user);
         if (!user) {
             return res.status(401).json({ error: "Not authenticated" });
         }
+        console.log("username: ", user.username);
         return res.json({ user: user });
     }
     catch (err) {

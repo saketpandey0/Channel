@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserBookmarks = exports.removeBookmark = exports.bookmarkStory = exports.getUserFollowing = exports.getUserFollowers = exports.unfollowUser = exports.followStatus = exports.followUser = exports.replycomment = exports.deleteComment = exports.updateComment = exports.removeClapComment = exports.clapComment = exports.getComments = exports.addComment = exports.storyClapStatus = exports.getStoryClaps = exports.removeClap = exports.clapStory = void 0;
+exports.contentSearch = exports.getUserBookmarks = exports.removeBookmark = exports.bookmarkStory = exports.getUserFollowing = exports.getUserFollowers = exports.unfollowUser = exports.followStatus = exports.followUser = exports.replycomment = exports.deleteComment = exports.updateComment = exports.removeClapComment = exports.clapComment = exports.getComments = exports.addComment = exports.storyClapStatus = exports.getStoryClaps = exports.removeClap = exports.clapStory = void 0;
 const db_1 = __importDefault(require("../db"));
 const commentValidation_1 = __importDefault(require("../validators/commentValidation"));
 const redisCache_1 = require("../cache/redisCache");
@@ -1141,3 +1141,232 @@ const getUserBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getUserBookmarks = getUserBookmarks;
+const contentSearch = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { q } = req.query;
+        if (!q || q.trim().length === 0) {
+            return res.status(400).json({ error: "Search query is required" });
+        }
+        const searchTerm = q.trim();
+        const [stories, people, publications, topics] = yield Promise.all([
+            db_1.default.story.findMany({
+                where: {
+                    OR: [
+                        {
+                            title: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            excerpt: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            content: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        }
+                    ],
+                    status: 'PUBLISHED'
+                },
+                include: {
+                    author: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            avatar: true
+                        }
+                    },
+                    tags: {
+                        select: {
+                            tag: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: [
+                    { publishedAt: 'desc' },
+                    { createdAt: 'desc' }
+                ],
+                take: 20
+            }),
+            db_1.default.user.findMany({
+                where: {
+                    OR: [
+                        {
+                            name: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            username: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            bio: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        }
+                    ]
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    avatar: true,
+                    bio: true,
+                    isVerified: true,
+                    _count: {
+                        select: {
+                            followers: true
+                        }
+                    }
+                },
+                orderBy: [
+                    {
+                        followers: {
+                            _count: 'desc'
+                        }
+                    },
+                    { createdAt: 'desc' }
+                ],
+                take: 20
+            }),
+            db_1.default.publication.findMany({
+                where: {
+                    OR: [
+                        {
+                            name: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            description: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        }
+                    ]
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    description: true,
+                    coverImage: true,
+                    _count: {
+                        select: {
+                            subscribers: true
+                        }
+                    }
+                },
+                orderBy: [
+                    {
+                        subscribers: {
+                            _count: 'desc'
+                        }
+                    },
+                    { createdAt: 'desc' }
+                ],
+                take: 20
+            }),
+            db_1.default.tag.findMany({
+                where: {
+                    OR: [
+                        {
+                            name: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        },
+                        {
+                            description: {
+                                contains: searchTerm,
+                                mode: "insensitive"
+                            }
+                        }
+                    ]
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    _count: {
+                        select: {
+                            stories: true
+                        }
+                    }
+                },
+                orderBy: [
+                    {
+                        stories: {
+                            _count: 'desc'
+                        }
+                    },
+                    { createdAt: 'desc' }
+                ],
+                take: 20
+            })
+        ]);
+        // Transform the data to match the expected format
+        const transformedResults = {
+            stories: stories.map(story => ({
+                id: story.id,
+                title: story.title,
+                excerpt: story.excerpt,
+                slug: story.slug,
+                publishedAt: story.publishedAt,
+                readTime: story.readTime,
+                image: story.coverImage,
+                author: {
+                    name: story.author.name,
+                    username: story.author.username,
+                    avatar: story.author.avatar
+                },
+                tags: story.tags.map(t => t.tag.name)
+            })),
+            people: people.map(person => ({
+                id: person.id,
+                name: person.name,
+                username: person.username,
+                avatar: person.avatar,
+                bio: person.bio,
+                isVerified: person.isVerified,
+                followerCount: person._count.followers
+            })),
+            publications: publications.map(pub => ({
+                id: pub.id,
+                name: pub.name,
+                slug: pub.slug,
+                description: pub.description,
+                image: pub.coverImage,
+                followerCount: pub._count.subscribers
+            })),
+            topics: topics.map(topic => ({
+                id: topic.id,
+                name: topic.name,
+                description: topic.description,
+                storyCount: topic._count.stories
+            }))
+        };
+        return res.status(200).json(transformedResults);
+    }
+    catch (err) {
+        console.error("Error while searching", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+exports.contentSearch = contentSearch;

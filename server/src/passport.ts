@@ -155,6 +155,7 @@ export function initPassport() {
 
       const expressUser: Express.User = {
         userId: user.id,
+        username: user.username,
         name: user.name,
         email: user.email,
         role: user.role,

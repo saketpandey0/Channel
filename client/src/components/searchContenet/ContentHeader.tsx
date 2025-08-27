@@ -1,87 +1,48 @@
-import { Avatar } from "../shad";
-import { motion } from "motion/react";
-import type { ProfileUser, ProfileViewContext, ProfileTabConfig } from "../../types/profile";
+import type { TabType, SearchResults } from "../../types/searchResult";
 
-interface ProfileHeaderProps {
-  user: ProfileUser;
-  tabs: ProfileTabConfig[];
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-  viewContext: ProfileViewContext;
-}
+const ContentHeader: React.FC<{
+  activeTab: TabType;
+  setActiveTab: (tab: TabType) => void;
+  searchResults: SearchResults;
+  searchQuery: string;
+}> = ({ activeTab, setActiveTab, searchResults, searchQuery }) => {
+  const tabs = [
+    { key: 'stories' as const, label: 'Stories', count: searchResults.stories.length },
+    { key: 'people' as const, label: 'People', count: searchResults.people.length },
+    { key: 'publications' as const, label: 'Publications', count: searchResults.publications.length },
+    { key: 'topics' as const, label: 'Topics', count: searchResults.topics.length }
+  ];
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-  result,
-  tabs,
-  activeTab,
-  onTabChange,
-  viewContext
-}) => {
   return (
-    <div className="rounded-xl border p-6 shadow-sm shadow-slate-700/50 hover:shadow-lg">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="block md:hidden">
-            <Avatar className="bg-black h-18 w-18 pb-4"></Avatar>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900">
-            <span className="bg-gradient-to-bl from -z-10 to -z-0 bg-clip-text text-transparent">
-              {result.title}
+    <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Search Results for "{searchQuery}"
           </h1>
-          {user.isVerified && (
-            <span className="text-2xl text-blue-500">✓</span>
-          )}
+          <p className="text-gray-600">
+            Found {Object.values(searchResults).flat().length} results across all categories
+          </p>
         </div>
-        {viewContext.isOwner ? (
-          <button className="mb-10 cursor-pointer border-none text-4xl text-black">
-            ...
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            {viewContext.canMessage && (
-              <button className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50">
-                Message
-              </button>
-            )}
-            {viewContext.canReport && (
-              <button className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">
-                •••
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {user.bio && (
-        <p className="text-gray-600 mb-4">{user.bio}</p>
-      )}
-
-      <div className="flex flex-row gap-6 text-sm font-semibold">
-        {tabs.filter(tab => tab.visible).map((tab) => (
-          <motion.span
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`cursor-pointer text-gray-700 hover:text-black relative ${
-              activeTab === tab.id ? "text-black" : ""
-            }`}
-            whileHover={{ y: -1 }}
-          >
-            {tab.name}
-            {tab.count !== undefined && tab.count > 0 && (
-              <span className="ml-1 text-gray-500">({tab.count})</span>
-            )}
-            {activeTab === tab.id && (
-              <motion.div
-                className="absolute -bottom-2 left-0 right-0 h-1 bg-black rounded-full"
-                layoutId="activeTab"
-              />
-            )}
-          </motion.span>
-        ))}
+        
+        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                activeTab === tab.key
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
-
-export default ProfileHeader;
+export default ContentHeader;

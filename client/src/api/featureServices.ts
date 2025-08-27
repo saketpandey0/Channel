@@ -2,8 +2,8 @@ import axios from "axios";
 
 
 
-
 const BACKEND_URL = "http://localhost:3000";
+
 
 
 
@@ -182,7 +182,7 @@ export const getUserBookmarks = async (userId: string) => {
 
 export const contentSearch = async (q: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/api/feature/search/${q}`, {
+        const response = await axios.get(`${BACKEND_URL}/api/feature/search?q=${q}`, {
             withCredentials: true,
         });
         return response.data;

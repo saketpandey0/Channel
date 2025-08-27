@@ -22,4 +22,5 @@ router.get("/following/:id", featuresController_1.getUserFollowing);
 router.post("/story/:id/bookmark", featuresController_1.bookmarkStory);
 router.delete("/story/:id/bookmark", featuresController_1.removeBookmark);
 router.get("/user/:id/bookmarks", featuresController_1.getUserBookmarks);
+router.get("/search", featuresController_1.contentSearch);
 exports.default = router;
