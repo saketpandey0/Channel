@@ -30,7 +30,7 @@ app.use((0, express_session_1.default)({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: false,
-        maxAge: parseInt(process.env.COOKIE_MAX_AGE || '3600000'),
+        maxAge: parseInt(process.env.COOKIE_MAX_AGE || '604800000'),
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     }
 }));

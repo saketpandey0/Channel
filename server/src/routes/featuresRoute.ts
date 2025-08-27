@@ -26,6 +26,6 @@ router.post("/story/:id/bookmark", bookmarkStory);
 router.delete("/story/:id/bookmark", removeBookmark);
 router.get("/user/:id/bookmarks", getUserBookmarks); 
 
-router.get("/search/:q", contentSearch);
+router.get("/search", contentSearch);
 
 export default router;

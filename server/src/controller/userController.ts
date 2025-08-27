@@ -69,6 +69,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
 
     const payload = {
       userId: user.id,
+      username: user.username,
       name: user.name,
       email: user.email,
       role: user.role || "READER",
@@ -119,6 +120,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
 
     const payload = {
       userId: user.id,
+      username: user.username,
       name: user.name,
       email: user.email,
       role: user.role || "READER",
@@ -158,9 +160,12 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
 export const getCurrentUser = async (req: Request, res: Response): Promise<any> => {
   try {
     const user = req.session.user || req.user;
+    console.log("Current user from session:", req.session.user);
+    console.log("Current user from req.user:", req.user);
     if (!user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
+    console.log("username: ",user.username)
     return res.json({ user: user });
   } catch (err) {
     console.error(err);

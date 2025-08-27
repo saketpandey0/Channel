@@ -135,6 +135,7 @@ function initPassport() {
                 return cb(null, null);
             const expressUser = {
                 userId: user.id,
+                username: user.username,
                 name: user.name,
                 email: user.email,
                 role: user.role,

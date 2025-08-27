@@ -6,7 +6,7 @@ import { Write } from './pages/Write';
 import { Notification } from './pages/notification';
 import Statsboard from './components/Analytics/Statsboard';
 import { ProfileWrapper } from './components/profile/ProfileWrapper';
-import ContentWrapper from './components/searchContenet/ContentWrapper';
+// import ContentWrapper from './components/searchContenet/ContentWrapper';
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
         <Route path="/stories" element={<StoriesLayout />} />
         <Route path="/stats" element={<Statsboard />} />
         <Route path="/:username/:tab?" element={<ProfileWrapper />} />
-        <Route path="/:username/:tab?" element={<ContentWrapper />} />
+        {/* <Route path="/:username/:tab?" element={<ContentWrapper />} /> */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/editor" element={<Write />} />
         <Route path="/notification" element={<Notification />} />

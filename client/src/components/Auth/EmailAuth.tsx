@@ -120,7 +120,7 @@ export const EmailAuth = ({
             <Button
               type="submit"
               variant={"secondary"}
-              className="md:text-md flex w-3/5 min-w-[20vw] cursor-pointer items-center justify-center rounded-3xl bg-black font-medium text-white"
+              className="md:text-md flex min-w-[20vw] cursor-pointer items-center justify-center rounded-3xl bg-black font-medium text-white"
               disabled={AuthEmail.isPending}
             >
               {AuthEmail.isPending

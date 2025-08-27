@@ -27,6 +27,7 @@ router.get('/google/callback', passport_1.default.authenticate('google', {
     if (req.user) {
         req.session.user = {
             userId: req.user.userId,
+            username: req.user.username,
             name: req.user.name || "Unknown",
             email: req.user.email,
             role: req.user.role || "READER",
@@ -42,6 +43,7 @@ router.get('/github/callback', passport_1.default.authenticate('github', {
     if (req.user) {
         req.session.user = {
             userId: req.user.userId,
+            username: req.user.username,
             name: req.user.name || "Unknown",
             email: req.user.email,
             role: req.user.role || "READER",
