@@ -12,31 +12,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.contentSearch = exports.getUserBookmarks = exports.removeBookmark = exports.bookmarkStory = exports.getUserFollowing = exports.getUserFollowers = exports.unfollowUser = exports.followStatus = exports.followUser = exports.replycomment = exports.deleteComment = exports.updateComment = exports.removeClapComment = exports.clapComment = exports.getComments = exports.addComment = exports.storyClapStatus = exports.getStoryClaps = exports.removeClap = exports.clapStory = void 0;
+exports.getBatchStoryMetaData = exports.contentSearch = exports.populateFollowCounts = exports.toggleStoryBookmark = exports.getBatchFollowData = exports.getUserFollowData = exports.toggleUserFollow = exports.replycomment = exports.deleteComment = exports.updateComment = exports.getBatchCommentClapData = exports.toggleCommentClap = exports.getComments = exports.addComment = exports.getStoryClapData = exports.toggleClapStory = void 0;
 const db_1 = __importDefault(require("../db"));
 const commentValidation_1 = __importDefault(require("../validators/commentValidation"));
 const redisCache_1 = require("../cache/redisCache");
-const clapStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const toggleClapStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
-        const userId = ((_a = req.session.user) === null || _a === void 0 ? void 0 : _a.userId) || ((_b = req.user) === null || _b === void 0 ? void 0 : _b.userId);
-        const user = req.user;
-        console.log("user logging:", user);
-        console.log("logging userId:", userId);
-        console.log("req.user:", req.user);
-        console.log("req.session.user:", (_c = req.session) === null || _c === void 0 ? void 0 : _c.user);
+        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
         const story = yield db_1.default.story.findUnique({
             where: { id },
+            select: { allowClaps: true, clapCount: true }
         });
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
         if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
+            return res.status(403).json({ error: "Story does not allow claps" });
         }
         const existingClap = yield db_1.default.clap.findUnique({
             where: {
@@ -46,129 +42,10 @@ const clapStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 }
             }
         });
+        let newClapStatus;
+        let newClapCount;
         if (existingClap) {
-            console.log("clapped Already");
-            return res.status(400).json({ err: "Story already clapped" });
-        }
-        const clap = yield db_1.default.clap.create({
-            data: {
-                userId,
-                storyId: id,
-                count: 1,
-            }
-        });
-        const totalClaps = yield db_1.default.clap.aggregate({
-            where: {
-                storyId: id
-            },
-            _sum: {
-                count: true
-            }
-        });
-        yield db_1.default.story.update({
-            where: { id },
-            data: {
-                clapCount: totalClaps._sum.count || 0,
-            }
-        });
-        yield redisCache_1.cache.evict("story_claps", [id]);
-        yield redisCache_1.cache.evict("user_clapped", [userId, id]);
-        res.status(200).json({ msg: "Story clapped successfully" });
-        console.log("clapping");
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-});
-exports.clapStory = clapStory;
-const removeClap = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        const story = yield db_1.default.story.findUnique({
-            where: { id },
-        });
-        if (!story) {
-            return res.status(404).json({ error: "Story not found" });
-        }
-        if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
-        }
-        yield db_1.default.clap.delete({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
-                }
-            }
-        });
-        const totalClaps = yield db_1.default.clap.aggregate({
-            where: {
-                storyId: id
-            },
-            _sum: {
-                count: true
-            }
-        });
-        yield db_1.default.story.update({
-            where: { id },
-            data: {
-                clapCount: totalClaps._sum.count || 0,
-            }
-        });
-        yield redisCache_1.cache.evict("story_claps", [id]);
-        yield redisCache_1.cache.evict("user_clapped", [userId, id]);
-        res.status(200).json({ msg: "Clap removed successfully" });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-});
-exports.removeClap = removeClap;
-const getStoryClaps = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        if (!userId) {
-            return res.json({
-                err: "Unauthorized Access"
-            });
-        }
-        const cacheKey = userId ? `${id}_${userId}` : id;
-        const cachedData = yield redisCache_1.cache.get("story_claps", [cacheKey]);
-        if (cachedData) {
-            return res.status(200).json(cachedData);
-        }
-        const story = yield db_1.default.story.findUnique({
-            where: { id },
-        });
-        if (!story) {
-            return res.status(404).json({ error: "Story not found" });
-        }
-        if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
-        }
-        const totalClaps = yield db_1.default.clap.aggregate({
-            where: {
-                storyId: id
-            },
-            _sum: {
-                count: true
-            },
-            _count: {
-                id: true
-            }
-        });
-        let userClaps = null;
-        if (userId) {
-            userClaps = yield db_1.default.clap.findUnique({
+            yield db_1.default.clap.delete({
                 where: {
                     userId_storyId: {
                         userId,
@@ -176,42 +53,43 @@ const getStoryClaps = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     }
                 }
             });
+            newClapStatus = false;
+            newClapCount = Math.max((story.clapCount || 0) - 1, 0);
         }
-        const recentClaps = yield db_1.default.clap.findMany({
-            where: {
-                storyId: id,
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true
-                    }
+        else {
+            yield db_1.default.clap.create({
+                data: {
+                    userId,
+                    storyId: id,
+                    count: 1,
                 }
-            },
-            orderBy: {
-                updatedAt: 'desc'
-            },
-            take: 10
+            });
+            newClapStatus = true;
+            newClapCount = (story.clapCount || 0) + 1;
+        }
+        yield db_1.default.story.update({
+            where: { id },
+            data: { clapCount: newClapCount }
         });
-        const responseData = {
-            totalClaps: totalClaps._sum.count || 0,
-            totalClapers: totalClaps._count.id || 0,
-            userClaps: (userClaps === null || userClaps === void 0 ? void 0 : userClaps.count) || 0,
-            recentClaps
-        };
-        yield redisCache_1.cache.set("story_claps", [cacheKey], responseData, 300);
-        res.status(200).json(responseData);
+        const cacheKeys = [
+            `clap:status:${userId}:${id}`,
+            `story:claps:${id}`,
+            `story:${id}`
+        ];
+        yield Promise.all(cacheKeys.map(key => redisCache_1.cache.evictPattern(key)));
+        return res.status(200).json({
+            clapped: newClapStatus,
+            clapCount: newClapCount,
+            message: newClapStatus ? "Story clapped successfully" : "Clap removed successfully"
+        });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Toggle clap error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.getStoryClaps = getStoryClaps;
-const storyClapStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.toggleClapStory = toggleClapStory;
+const getStoryClapData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
@@ -219,35 +97,52 @@ const storyClapStatus = (req, res) => __awaiter(void 0, void 0, void 0, function
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
+        const cacheKey = `story:claps:${id}`;
+        const cachedData = yield redisCache_1.cache.get(cacheKey, [userId ? userId : '']);
+        if (cachedData) {
+            return res.status(200).json(JSON.parse(cachedData));
+        }
         const story = yield db_1.default.story.findUnique({
             where: { id },
+            select: {
+                allowClaps: true,
+                clapCount: true,
+                id: true
+            }
         });
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
         if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
+            return res.status(403).json({ error: "Story does not allow claps" });
         }
-        const cacheKey = `clap:status`;
-        const cachedData = yield redisCache_1.cache.get(cacheKey, [userId, id]);
-        const existingClap = yield db_1.default.clap.findUnique({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
+        // Get user's clap status if authenticated
+        let userClapped = false;
+        if (userId) {
+            const userClap = yield db_1.default.clap.findUnique({
+                where: {
+                    userId_storyId: {
+                        userId,
+                        storyId: id
+                    }
                 }
-            }
-        });
-        if (existingClap) {
-            return res.status(200).json({ clap: !!existingClap });
+            });
+            userClapped = !!userClap;
         }
-        yield redisCache_1.cache.set(cacheKey, [userId, id], { clap: false }, 60);
-        res.status(200).json({ clap: false });
+        const responseData = {
+            clapCount: story.clapCount || 0,
+            userClapped,
+            allowClaps: story.allowClaps
+        };
+        yield redisCache_1.cache.set(cacheKey, [JSON.stringify(responseData)], 300);
+        return res.status(200).json(responseData);
     }
     catch (error) {
+        console.error('Get clap data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.storyClapStatus = storyClapStatus;
+exports.getStoryClapData = getStoryClapData;
 const addComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
@@ -424,7 +319,7 @@ const getComments = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getComments = getComments;
-const clapComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const toggleCommentClap = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
@@ -446,83 +341,91 @@ const clapComment = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 }
             }
         });
+        let newClapStatus;
+        let newClapCount;
         if (existingClap) {
-            return res.status(400).json({ error: "Comment already clapped" });
+            yield db_1.default.clapComment.delete({
+                where: {
+                    userId_commentId: {
+                        userId,
+                        commentId: id
+                    }
+                }
+            });
+            newClapStatus = false;
+            newClapCount = Math.max((comment.clapCount || 0) - 1, 0);
         }
-        const clap = yield db_1.default.clapComment.create({
-            data: {
-                userId,
-                commentId: id,
-                count: 1,
-            }
-        });
-        const totalClaps = yield db_1.default.clapComment.aggregate({
-            where: {
-                commentId: id
-            },
-            _sum: {
-                count: true
-            }
-        });
+        else {
+            yield db_1.default.clapComment.create({
+                data: {
+                    userId,
+                    commentId: id,
+                    count: 1
+                }
+            });
+            newClapStatus = true;
+            newClapCount = (comment.clapCount || 0) + 1;
+        }
         yield db_1.default.comment.update({
             where: { id },
-            data: {
-                clapCount: totalClaps._sum.count || 0,
-            }
+            data: { clapCount: newClapCount }
         });
-        yield redisCache_1.cache.evictPattern(`story_comments:${comment.storyId}:*`);
-        res.status(200).json({ msg: "Comment clapped successfully" });
+        const cacheKeys = [
+            `clap:status:${userId}:${id}`,
+            `comment:claps:${id}`,
+            `comment:${id}`
+        ];
+        yield Promise.all(cacheKeys.map(key => redisCache_1.cache.evictPattern(key)));
+        return res.status(200).json({
+            clapped: newClapStatus,
+            clapCount: newClapCount,
+            message: newClapStatus ? "Comment clapped successfully" : "Clap removed successfully"
+        });
     }
     catch (error) {
         console.error(error);
         return res.status(500).json({ error: error.message });
     }
 });
-exports.clapComment = clapComment;
-const removeClapComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.toggleCommentClap = toggleCommentClap;
+const getBatchCommentClapData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
-        const { id } = req.params;
+        const { commentIds } = req.body;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
-        const comment = yield db_1.default.comment.findUnique({
-            where: { id }
-        });
-        if (!comment) {
-            return res.status(404).json({ error: "Comment not found" });
+        if (!Array.isArray(commentIds) || commentIds.length === 0) {
+            return res.status(400).json({ error: "Invalid comment ids" });
         }
-        yield db_1.default.clapComment.delete({
-            where: {
-                userId_commentId: {
-                    userId,
-                    commentId: id
-                }
-            }
+        const comments = yield db_1.default.comment.findMany({
+            where: { id: { in: commentIds } },
+            select: { id: true, clapCount: true }
         });
-        const commentCount = yield db_1.default.comment.count({
+        const userClaps = yield db_1.default.clapComment.findMany({
             where: {
-                storyId: comment.storyId
-            }
-        });
-        yield db_1.default.story.update({
-            where: {
-                id: comment.storyId
+                userId,
+                commentId: { in: commentIds }
             },
-            data: {
-                commentCount
-            }
+            select: { commentId: true }
         });
-        yield redisCache_1.cache.evictPattern(`story_comments:${comment.storyId}:*`);
-        res.status(200).json({ msg: "Comment clapped successfully" });
+        const userClapSet = new Set(userClaps.map(c => c.commentId));
+        const response = comments.reduce((acc, c) => {
+            acc[c.id] = {
+                clapCount: c.clapCount || 0,
+                userClap: userClapSet.has(c.id)
+            };
+            return acc;
+        }, {});
+        return res.status(200).json(response);
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 });
-exports.removeClapComment = removeClapComment;
+exports.getBatchCommentClapData = getBatchCommentClapData;
 const updateComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
@@ -710,7 +613,7 @@ const replycomment = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.replycomment = replycomment;
-const followUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const toggleUserFollow = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
@@ -719,234 +622,211 @@ const followUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             return res.status(401).json({ error: "Unauthorized Access" });
         }
         if (userId === id) {
-            return res.status(400).json({ error: "You cannot follow yourself" });
-        }
-        const userToFollow = yield db_1.default.user.findUnique({
-            where: { id }
-        });
-        if (!userToFollow) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(401).json({ error: "You cannot follow yourself" });
         }
         const existingFollow = yield db_1.default.follow.findUnique({
             where: {
                 followerId_followingId: {
                     followerId: userId,
-                    followingId: id
-                }
-            }
-        });
-        if (existingFollow) {
-            res.status(200).json({ error: "You are already following this user" });
-        }
-        yield db_1.default.follow.create({
-            data: {
-                followerId: userId,
-                followingId: id
+                    followingId: id,
+                },
             },
-            include: {
-                following: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true
-                    }
-                }
-            }
         });
-        yield redisCache_1.cache.evictPattern(`user_followers:${id}:*`);
-        yield redisCache_1.cache.evictPattern(`user_following:${userId}:*`);
-        yield redisCache_1.cache.evict("user_follow_status", [userId, id]);
-        res.status(200).json({ msg: "Followed successfully" });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-});
-exports.followUser = followUser;
-const followStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        const existingFollow = yield db_1.default.follow.findUnique({
-            where: {
-                followerId_followingId: {
-                    followerId: userId,
-                    followingId: id
-                }
-            }
-        });
+        let newFollowStatus;
+        let updatedCounts;
         if (existingFollow) {
-            return res.status(200).json({ following: !!existingFollow });
+            // unfollow
+            yield db_1.default.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: id,
+                    },
+                },
+            });
+            updatedCounts = yield Promise.all([
+                db_1.default.user.update({
+                    where: { id: userId },
+                    data: { followingCount: { decrement: 1 } },
+                    select: { followingCount: true },
+                }),
+                db_1.default.user.update({
+                    where: { id },
+                    data: { followersCount: { decrement: 1 } },
+                    select: { followersCount: true },
+                }),
+            ]);
+            newFollowStatus = false;
         }
-        res.status(200).json({ following: false });
-    }
-    catch (error) {
-    }
-});
-exports.followStatus = followStatus;
-const unfollowUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        yield db_1.default.follow.delete({
-            where: {
-                followerId_followingId: {
+        else {
+            yield db_1.default.follow.create({
+                data: {
                     followerId: userId,
-                    followingId: id
-                }
-            }
+                    followingId: id,
+                },
+            });
+            updatedCounts = yield Promise.all([
+                db_1.default.user.update({
+                    where: { id: userId },
+                    data: { followingCount: { increment: 1 } },
+                    select: { followingCount: true },
+                }),
+                db_1.default.user.update({
+                    where: { id },
+                    data: { followersCount: { increment: 1 } },
+                    select: { followersCount: true },
+                }),
+            ]);
+            newFollowStatus = true;
+        }
+        const cacheKey = [
+            `follow:status:${userId}:${id}`,
+            `follow:data:${id}`,
+            `user:followers:${id}`,
+            `user:following:${userId}`,
+            `user:${id}`,
+            `user:${userId}`,
+        ];
+        yield Promise.all(cacheKey.map((key) => redisCache_1.cache.evictPattern(key)));
+        return res.status(200).json({
+            following: newFollowStatus,
+            followerCount: updatedCounts[1].followersCount,
+            followingCount: updatedCounts[0].followingCount,
+            msg: newFollowStatus ? "Followed successfully" : "Unfollowed successfully",
         });
-        yield redisCache_1.cache.evictPattern(`user_followers:${id}:*`);
-        yield redisCache_1.cache.evictPattern(`user_following:${userId}:*`);
-        yield redisCache_1.cache.evict("user_follow_status", [userId, id]);
-        res.status(200).json({ msg: "Unfollowed successfully" });
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
-exports.unfollowUser = unfollowUser;
-const getUserFollowers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.toggleUserFollow = toggleUserFollow;
+const getUserFollowData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-        const cachedData = yield redisCache_1.cache.get("user_followers", [id, page.toString(), limit.toString()]);
+        const cacheKey = `follow:data`;
+        const cachedData = yield redisCache_1.cache.get(cacheKey, [id, (userId ? userId : '')]);
         if (cachedData) {
-            return res.status(200).json(cachedData);
-        }
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
+            return res.status(200).json(JSON.parse(cachedData));
         }
         const user = yield db_1.default.user.findUnique({
-            where: { id }
+            where: { id },
+            select: { id: true }
         });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-        const followers = yield db_1.default.follow.findMany({
-            where: {
-                followingId: id
-            },
-            include: {
-                follower: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true,
-                        bio: true,
+        const [followersCount, followingCount] = yield Promise.all([
+            db_1.default.follow.count({
+                where: { followingId: id }
+            }),
+            db_1.default.follow.count({
+                where: { followerId: id }
+            })
+        ]);
+        let isFollowing = false;
+        if (userId && userId !== id) {
+            const followRelation = yield db_1.default.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: id
                     }
                 }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-        const totalFollowers = yield db_1.default.follow.count({
-            where: {
-                followingId: id
-            }
-        });
+            });
+            isFollowing = !!followRelation;
+        }
         const responseData = {
-            followers,
-            pagination: {
-                page,
-                limit,
-                total: totalFollowers,
-                totalPages: Math.ceil(totalFollowers / limit),
-            }
+            followersCount,
+            followingCount,
+            isFollowing,
+            canFollow: userId && userId !== id
         };
-        yield redisCache_1.cache.set("user_followers", [id, page.toString(), limit.toString()], responseData, 600);
-        res.status(200).json(responseData);
+        yield redisCache_1.cache.set(cacheKey, [JSON.stringify(responseData)], 300);
+        return res.status(200).json(responseData);
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Get follow data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.getUserFollowers = getUserFollowers;
-const getUserFollowing = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getUserFollowData = getUserFollowData;
+const getBatchFollowData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
-        const cachedData = yield redisCache_1.cache.get("user_following", [id, page.toString(), limit.toString()]);
-        if (cachedData) {
-            return res.status(200).json(cachedData);
+        const { userIds } = req.body;
+        const currentUserId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ error: "Invalid user IDs" });
         }
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
+        if (userIds.length > 50) {
+            return res.status(400).json({ error: "Too many user IDs (max 50)" });
         }
-        const user = yield db_1.default.user.findUnique({
-            where: { id }
+        const users = yield db_1.default.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true }
         });
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        const following = yield db_1.default.follow.findMany({
-            where: { followerId: id },
-            include: {
-                following: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true,
-                        bio: true,
-                    }
-                }
+        const existingUserIds = users.map(u => u.id);
+        const followersData = yield db_1.default.follow.groupBy({
+            by: ['followingId'],
+            where: {
+                followingId: { in: existingUserIds }
             },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-        const totalFollowing = yield db_1.default.follow.count({
-            where: { followerId: id }
-        });
-        const responseData = {
-            following,
-            pagination: {
-                page,
-                limit,
-                total: totalFollowing,
-                totalPages: Math.ceil(totalFollowing / limit),
+            _count: {
+                followingId: true
             }
-        };
-        yield redisCache_1.cache.set("user_following", [id, page.toString(), limit.toString()], responseData, 600);
-        res.status(200).json(responseData);
+        });
+        const followingData = yield db_1.default.follow.groupBy({
+            by: ['followerId'],
+            where: {
+                followerId: { in: existingUserIds }
+            },
+            _count: {
+                followerId: true
+            }
+        });
+        let followingRelations = {};
+        if (currentUserId) {
+            const follows = yield db_1.default.follow.findMany({
+                where: {
+                    followerId: currentUserId,
+                    followingId: { in: existingUserIds }
+                },
+                select: { followingId: true }
+            });
+            followingRelations = follows.reduce((acc, follow) => {
+                acc[follow.followingId] = true;
+                return acc;
+            }, {});
+        }
+        const followersMap = followersData.reduce((acc, item) => {
+            acc[item.followingId] = item._count.followingId;
+            return acc;
+        }, {});
+        const followingMap = followingData.reduce((acc, item) => {
+            acc[item.followerId] = item._count.followerId;
+            return acc;
+        }, {});
+        const responseData = existingUserIds.reduce((acc, userId) => {
+            acc[userId] = {
+                followersCount: followersMap[userId] || 0,
+                followingCount: followingMap[userId] || 0,
+                isFollowing: followingRelations[userId] || false,
+                canFollow: currentUserId && currentUserId !== userId
+            };
+            return acc;
+        }, {});
+        return res.status(200).json(responseData);
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Batch follow data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.getUserFollowing = getUserFollowing;
-const bookmarkStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getBatchFollowData = getBatchFollowData;
+const toggleStoryBookmark = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
@@ -955,192 +835,115 @@ const bookmarkStory = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(401).json({ error: "Unauthorized Access" });
         }
         const story = yield db_1.default.story.findUnique({
-            where: { id }
+            where: { id },
+            select: { id: true }
         });
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
         const existingBookmark = yield db_1.default.bookmark.findUnique({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
-                }
-            }
+            where: { userId_storyId: { userId, storyId: id } }
         });
+        let newBookmarkStatus;
         if (existingBookmark) {
-            return res.status(400).json({ error: "Story already bookmarked" });
+            yield db_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+                yield tx.bookmark.delete({
+                    where: { userId_storyId: { userId, storyId: id } }
+                });
+                yield Promise.all([
+                    tx.story.update({
+                        where: { id },
+                        data: { bookmarkCount: { decrement: 1 } }
+                    }),
+                    tx.user.update({
+                        where: { id: userId },
+                        data: { bookmarkCount: { decrement: 1 } }
+                    })
+                ]);
+            }));
+            newBookmarkStatus = false;
         }
-        yield db_1.default.bookmark.create({
-            data: {
-                userId,
-                storyId: id,
-            },
-            include: {
-                story: {
-                    select: {
-                        id: true,
-                        title: true,
-                        subtitle: true,
-                        excerpt: true,
-                        coverImage: true,
-                        slug: true,
-                        readTime: true,
-                        author: {
-                            select: {
-                                id: true,
-                                username: true,
-                                name: true,
-                                avatar: true,
-                            }
-                        }
-                    }
-                }
-            }
+        else {
+            yield db_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+                yield tx.bookmark.create({
+                    data: { userId, storyId: id }
+                });
+                yield Promise.all([
+                    tx.story.update({
+                        where: { id },
+                        data: { bookmarkCount: { increment: 1 } }
+                    }),
+                    tx.user.update({
+                        where: { id: userId },
+                        data: { bookmarkCount: { increment: 1 } }
+                    })
+                ]);
+            }));
+            newBookmarkStatus = true;
+        }
+        const [updatedStory, updatedUser] = yield Promise.all([
+            db_1.default.story.findUnique({
+                where: { id },
+                select: { bookmarkCount: true }
+            }),
+            db_1.default.user.findUnique({
+                where: { id: userId },
+                select: { bookmarkCount: true }
+            })
+        ]);
+        const cacheKeys = [
+            `bookmark:status:${userId}:${id}`,
+            `bookmark:data:${id}`,
+            `story:bookmarks:${id}`,
+            `user:bookmarks:${userId}`,
+            `story:${id}`,
+            `user:${userId}`
+        ];
+        yield Promise.all(cacheKeys.map(key => redisCache_1.cache.evictPattern(key)));
+        return res.status(200).json({
+            bookmarked: newBookmarkStatus,
+            storyBookmarkCount: (updatedStory === null || updatedStory === void 0 ? void 0 : updatedStory.bookmarkCount) || 0,
+            userBookmarkCount: (updatedUser === null || updatedUser === void 0 ? void 0 : updatedUser.bookmarkCount) || 0,
+            message: newBookmarkStatus
+                ? "Story bookmarked successfully"
+                : "Bookmark removed successfully"
         });
-        const bookmarkCount = yield db_1.default.bookmark.count({
-            where: {
-                storyId: id
-            }
-        });
-        yield db_1.default.story.update({
-            where: { id },
-            data: {
-                bookmarkCount
-            }
-        });
-        yield redisCache_1.cache.evictPattern(`user_bookmarks:${userId}:*`);
-        yield redisCache_1.cache.evict("user_bookmark_status", [userId, id]);
-        res.status(200).json({ msg: "Story bookmarked successfully" });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Toggle bookmark error:", error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.bookmarkStory = bookmarkStory;
-const removeBookmark = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+exports.toggleStoryBookmark = toggleStoryBookmark;
+const populateFollowCounts = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        yield db_1.default.bookmark.delete({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
+        const users = yield db_1.default.user.findMany({
+            select: { id: true }
+        });
+        for (const user of users) {
+            const [followersCount, followingCount] = yield Promise.all([
+                db_1.default.follow.count({
+                    where: { followingId: user.id }
+                }),
+                db_1.default.follow.count({
+                    where: { followerId: user.id }
+                })
+            ]);
+            yield db_1.default.user.update({
+                where: { id: user.id },
+                data: {
+                    followersCount,
+                    followingCount
                 }
-            }
-        });
-        const bookmarkCount = yield db_1.default.bookmark.count({
-            where: {
-                storyId: id
-            }
-        });
-        yield db_1.default.story.update({
-            where: { id },
-            data: {
-                bookmarkCount
-            }
-        });
-        yield redisCache_1.cache.evictPattern(`user_bookmarks:${userId}:*`);
-        yield redisCache_1.cache.evict("user_bookmark_status", [userId, id]);
-        res.status(200).json({ msg: "Bookmark removed successfully" });
+            });
+        }
+        console.log('Follow counts populated successfully');
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Error populating follow counts:', error);
     }
 });
-exports.removeBookmark = removeBookmark;
-const getUserBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    try {
-        const { id } = req.params;
-        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
-        const cachedData = yield redisCache_1.cache.get("user_bookmarks", [userId || 'anonymous', page.toString(), limit.toString()]);
-        if (cachedData) {
-            return res.status(200).json(cachedData);
-        }
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        const bookmarks = yield db_1.default.bookmark.findMany({
-            where: { userId },
-            include: {
-                story: {
-                    include: {
-                        author: {
-                            select: {
-                                id: true,
-                                username: true,
-                                name: true,
-                                avatar: true,
-                                isVerified: true,
-                            }
-                        },
-                        publication: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
-                                logo: true,
-                            }
-                        },
-                        tags: {
-                            include: {
-                                tag: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        slug: true,
-                                    }
-                                }
-                            }
-                        },
-                        _count: {
-                            select: {
-                                claps: true,
-                                comments: true,
-                                bookmarks: true,
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-        const totalBookmarks = yield db_1.default.bookmark.count({
-            where: { userId }
-        });
-        const responseData = {
-            bookmarks,
-            pagination: {
-                page,
-                limit,
-                total: totalBookmarks,
-                totalPages: Math.ceil(totalBookmarks / limit),
-            }
-        };
-        yield redisCache_1.cache.set("user_bookmarks", [userId, page.toString(), limit.toString()], responseData, 900);
-        res.status(200).json(responseData);
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-});
-exports.getUserBookmarks = getUserBookmarks;
+exports.populateFollowCounts = populateFollowCounts;
 const contentSearch = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { q } = req.query;
@@ -1370,3 +1173,67 @@ const contentSearch = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.contentSearch = contentSearch;
+const getBatchStoryMetaData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    try {
+        const { ids } = req.body;
+        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Access" });
+        }
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: "Invalid story ids" });
+        }
+        if (ids.length > 50) {
+            return res.status(400).json({ error: "Too many story ids" });
+        }
+        const storyIds = [...new Set(ids)];
+        const stories = yield db_1.default.story.findMany({
+            where: {
+                id: { in: storyIds },
+            },
+            select: {
+                id: true,
+                clapCount: true,
+                allowClaps: true,
+            }
+        });
+        const claps = yield db_1.default.clap.findMany({
+            where: {
+                userId,
+                storyId: { in: storyIds }
+            },
+            select: { storyId: true }
+        });
+        const userClaps = claps.reduce((acc, clap) => {
+            acc[clap.storyId] = true;
+            return acc;
+        }, {});
+        const bookmarks = yield db_1.default.bookmark.findMany({
+            where: {
+                userId,
+                storyId: { in: storyIds }
+            },
+            select: { storyId: true }
+        });
+        const userBookmarks = bookmarks.reduce((acc, bm) => {
+            acc[bm.storyId] = true;
+            return acc;
+        }, {});
+        const response = stories.reduce((acc, story) => {
+            acc[story.id] = {
+                clapCount: story.clapCount || 0,
+                userClapped: userClaps[story.id] || false,
+                allowClaps: story.allowClaps,
+                bookmarked: userBookmarks[story.id] || false
+            };
+            return acc;
+        }, {});
+        return res.status(200).json(response);
+    }
+    catch (err) {
+        console.error('Batch story metadata error:', err);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+exports.getBatchStoryMetaData = getBatchStoryMetaData;

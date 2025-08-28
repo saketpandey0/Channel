@@ -8,7 +8,7 @@ const BACKEND_URL = "http://localhost:3000";
 
 
 
-export const clapStory = async (storyId: string) => {
+export const toggleStoryClap = async (storyId: string) => {
     const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/clap`, {},{
         withCredentials: true,
         headers: {
@@ -18,22 +18,15 @@ export const clapStory = async (storyId: string) => {
     return response.data;
 }
 
-export const storyClapStatus = async (storyId: string) => {
-    const response = await axios.get(`${BACKEND_URL}/api/feature/story/${storyId}/clap-status`, {
+export const getStoryClapData = async (storyId: string) => {
+    const response = await axios.get(`${BACKEND_URL}/api/feature/story/${storyId}/clap`, {
         withCredentials: true,
     });
     return response.data;
 }
 
-export const removeClap = async (storyId: string) => {
-    const response = await axios.delete(`${BACKEND_URL}/api/feature/story/${storyId}/clap`, {
-        withCredentials: true
-    });
-    return response.data;
-}
-
-export const getStoryClaps = async (storyId: string) => {
-    const response = await axios.get(`${BACKEND_URL}/api/feature/stories/${storyId}/claps`, {
+export const getBatchStoryMetaData = async (storyIds: string[]) => {
+    const response = await axios.post(`${BACKEND_URL}/api/feature/stories/metadata`, {ids:storyIds},  {
         withCredentials: true
     });
     return response.data;
@@ -44,28 +37,6 @@ export const getStoryComments = async (storyId: string) => {
         withCredentials: true,
     });
     return response.data;
-}
-
-export const updateComment = async (storyId: string, commentId: string, comment: string) => {
-    const response = await axios.put(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}`, {
-        comment
-    }, {
-        withCredentials: true,
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    });
-    return response.data;
-}
-
-export const removeClapComment = async (storyId: string, commentId: string) => {
-    const response = await axios.delete(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}/clap`, {
-        withCredentials: true,
-        headers: {
-        'Content-Type': 'application/json',
-    }
-});
-return response.data;
 }
 
 export const commentStory = async (storyId: string, comment: string) => {
@@ -102,24 +73,47 @@ export const replycomment = async (storyId: string, commentId: string, comment: 
     return response.data;
 }
 
-export const clapComment = async (storyId: string, commentId: string) => {
-    const response = await axios.post(`${BACKEND_URL}/api/feature/stories/${storyId}/comments/${commentId}/clap`, null, {
+export const updateComment = async (storyId: string, commentId: string, comment: string) => {
+    const response = await axios.put(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}`, {
+        comment
+    }, {
         withCredentials: true,
         headers: {
-        'Content-Type': 'application/json',
+            'Content-Type': 'application/json',
         }
     });
     return response.data;
 }
 
-export const removeCommentClap = async (storyId: string, commentId: string) => {
-    await axios.delete(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}/clap`, {
+export const toggleCommentClap = async (storyId: string, commentId: string) => {
+    const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}/clap`, {
         withCredentials: true,
-    });
+        headers: {
+        'Content-Type': 'application/json',
+    }
+});
+return response.data;
 }
 
-export const followUser = async (userId: string) => {
-    const reponse = await axios.post(`${BACKEND_URL}/api/feature/follow/${userId}`, null, {
+export const getBatchCommentClapData = async (storyId: string, commentId: string[]) => {
+    try {
+        const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comments/clap`, {
+            commentIds: commentId
+        }, {
+            withCredentials: true,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching comment clap data", error);
+        throw error;
+    }
+}
+
+export const toggleUserFollow = async (userId: string) => {
+    const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/${userId}/follow`, null, {
         withCredentials: true,
         headers: {
             'Content-Type': 'application/json',
@@ -128,29 +122,15 @@ export const followUser = async (userId: string) => {
     return reponse.data;
 }
 
-export const followStatus = async (userId: string) => {
-    const reponse = await axios.get(`${BACKEND_URL}/api/feature/follow/${userId}/status`, {
+export const getUserFollowData = async (userId: string) => {
+    const reponse = await axios.get(`${BACKEND_URL}/api/feature/user/${userId}/follow`, {
         withCredentials: true,
     });
     return reponse.data;
 }
 
-export const unfollowUser = async (userId: string) => {
-    const reponse = await axios.delete(`${BACKEND_URL}/api/feature/follow/${userId}`, {
-        withCredentials: true,
-    });
-    return reponse.data;
-}
-
-export const getUserFollowers = async (userId: string) => {
-    const reponse = await axios.get(`${BACKEND_URL}/api/feature/followers/${userId}`, {
-        withCredentials: true,
-    });
-    return reponse.data;
-}
-
-export const getUserFollowing = async (userId: string) => {
-    const reponse = await axios.get(`${BACKEND_URL}/api/feature/following/${userId}`, {
+export const getBatchFollowData = async (userIds: string[]) => {
+    const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/follow`, { userIds }, {
         withCredentials: true,
     });
     return reponse.data;
