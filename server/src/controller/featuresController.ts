@@ -2,6 +2,8 @@ import { Request, response, Response, Router } from "express";
 import prisma from "../db"
 import commentValidation from "../validators/commentValidation";
 import { cache } from "../cache/redisCache";
+import { JsonWebTokenError } from "jsonwebtoken";
+import { promise } from "zod";
 
 
 
@@ -10,12 +12,11 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
-        
+
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
 
-        // Check if story exists and allows claps
         const story = await prisma.story.findUnique({
             where: { id },
             select: { allowClaps: true, clapCount: true }
@@ -29,7 +30,6 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
             return res.status(403).json({ error: "Story does not allow claps" });
         }
 
-        // Check existing clap
         const existingClap = await prisma.clap.findUnique({
             where: {
                 userId_storyId: {
@@ -43,7 +43,6 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
         let newClapCount: number;
 
         if (existingClap) {
-            // Remove clap
             await prisma.clap.delete({
                 where: {
                     userId_storyId: {
@@ -55,7 +54,6 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
             newClapStatus = false;
             newClapCount = Math.max((story.clapCount || 0) - 1, 0);
         } else {
-            // Add clap
             await prisma.clap.create({
                 data: {
                     userId,
@@ -67,20 +65,18 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
             newClapCount = (story.clapCount || 0) + 1;
         }
 
-        // Update story clap count
         await prisma.story.update({
             where: { id },
             data: { clapCount: newClapCount }
         });
 
-        // Clear relevant caches
         const cacheKeys = [
             `clap:status:${userId}:${id}`,
             `story:claps:${id}`,
-            `story:${id}` // if you cache full story data
+            `story:${id}`
         ];
-        
-        await Promise.all(cacheKeys.map(key => cache.del(key)));
+
+        await Promise.all(cacheKeys.map(key => cache.evictPattern(key)));
 
         return res.status(200).json({
             clapped: newClapStatus,
@@ -94,44 +90,42 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
     }
 };
 
-export const getStoryClaps = async (req: Request, res: Response): Promise<any> => {
+export const getStoryClapData = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
         if (!userId) {
-            return res.json({
-                err: "Unauthorized Access"
-            })
+            return res.status(401).json({ error: "Unauthorized Access" });
         }
-        const cacheKey = userId ? `${id}_${userId}` : id;
-        const cachedData = await cache.get("story_claps", [cacheKey]);
+
+        const cacheKey = `story:claps:${id}`;
+        const cachedData = await cache.get(cacheKey, [userId ? userId : '']);
+
         if (cachedData) {
-            return res.status(200).json(cachedData);
+            return res.status(200).json(JSON.parse(cachedData));
         }
 
         const story = await prisma.story.findUnique({
             where: { id },
-        })
-        if (!story) {
-            return res.status(404).json({ error: "Story not found" });
-        }
-        if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
-        }
-        const totalClaps = await prisma.clap.aggregate({
-            where: {
-                storyId: id
-            },
-            _sum: {
-                count: true
-            },
-            _count: {
+            select: {
+                allowClaps: true,
+                clapCount: true,
                 id: true
             }
         });
-        let userClaps = null;
+
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+
+        if (!story.allowClaps) {
+            return res.status(403).json({ error: "Story does not allow claps" });
+        }
+
+        // Get user's clap status if authenticated
+        let userClapped = false;
         if (userId) {
-            userClaps = await prisma.clap.findUnique({
+            const userClap = await prisma.clap.findUnique({
                 where: {
                     userId_storyId: {
                         userId,
@@ -139,136 +133,25 @@ export const getStoryClaps = async (req: Request, res: Response): Promise<any> =
                     }
                 }
             });
+            userClapped = !!userClap;
         }
-        const recentClaps = await prisma.clap.findMany({
-            where: {
-                storyId: id,
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true
-                    }
-                }
-            },
-            orderBy: {
-                updatedAt: 'desc'
-            },
-            take: 10
-        });
 
         const responseData = {
-            totalClaps: totalClaps._sum.count || 0,
-            totalClapers: totalClaps._count.id || 0,
-            userClaps: userClaps?.count || 0,
-            recentClaps
+            clapCount: story.clapCount || 0,
+            userClapped,
+            allowClaps: story.allowClaps
         };
 
-        await cache.set("story_claps", [cacheKey], responseData, 300);
 
-        res.status(200).json(responseData);
+        await cache.set(cacheKey, [JSON.stringify(responseData)], 300);
+        return res.status(200).json(responseData);
+
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Get clap data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
 
-export const storyClapStatus = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        const story = await prisma.story.findUnique({
-            where: { id },
-        })
-        if (!story) {
-            return res.status(404).json({ error: "Story not found" });
-        }
-        if (!story.allowClaps) {
-            return res.status(401).json({ error: "Story does not allow claps" });
-        }
-        const cacheKey = `clap:status`;
-        const cachedData = await cache.get(cacheKey, [userId, id]);
-
-        const existingClap = await prisma.clap.findUnique({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
-                }
-            }
-        });
-
-        if (existingClap) {
-            return res.status(200).json({ clap: !!existingClap });
-        }
-        await cache.set(cacheKey, [userId, id], { clap: false }, 60);
-        res.status(200).json({ clap: false });
-    } catch (error: any) {
-    }
-}
-
-export const getBatchClapData = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const {storyIds} = req.body;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-        if(!Array.isArray(storyIds) || storyIds.length === 0){
-            return res.status(400).json({ error: "Invalid story ids" });
-        }
-        if(storyIds.length > 50){
-            return res.status(400).json({ error: "Too many story ids" });
-        }
-
-        const stories = await prisma.story.findMany({
-            where: {
-                id: {in : storyIds},
-                allowClaps: true
-            },
-            select: {
-                id: true,
-                clapCount: true,
-                allowClaps: true
-            }
-        });
-        let userClaps: Record<string, boolean> = {};
-        if(userId){
-            const claps = await prisma.clap.findMany({
-                where: {
-                    userId,
-                    storyId: {in: storyIds}
-                },
-                select: {
-                    storyId: true
-                }
-            });
-
-            userClaps = claps.reduce((acc, clap)=> {
-                acc[clap.storyId] = true;
-                return acc;
-            }, {} as Record<string, boolean>);
-        }
-        const response = stories.reduce((acc, story)=> {
-            acc[story.id] = {
-                clapCount: story.clapCount || 0,
-                userClapped: userClaps[story.id] || false,
-                allowClaps: story.allowClaps
-            };
-            return acc;
-        }, {} as Record<string, any>);
-        return res.status(200).json(response);
-    }catch (err: any){
-        console.error('Batch clap data error: ', err);
-        return res.status(500).json({error: "Internal Server Error"});
-    }
-}
 
 export const addComment = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -450,7 +333,7 @@ export const getComments = async (req: Request, res: Response): Promise<any> => 
     }
 }
 
-export const clapComment = async (req: Request, res: Response): Promise<any> => {
+export const toggleCommentClap = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
@@ -464,7 +347,6 @@ export const clapComment = async (req: Request, res: Response): Promise<any> => 
         if (!comment) {
             return res.status(404).json({ error: "Comment not found" });
         }
-
         const existingClap = await prisma.clapComment.findUnique({
             where: {
                 userId_commentId: {
@@ -473,81 +355,97 @@ export const clapComment = async (req: Request, res: Response): Promise<any> => 
                 }
             }
         });
+        let newClapStatus: boolean;
+        let newClapCount: number;
         if (existingClap) {
-            return res.status(400).json({ error: "Comment already clapped" });
+            await prisma.clapComment.delete({
+                where: {
+                    userId_commentId: {
+                        userId,
+                        commentId: id
+                    }
+                }
+            });
+            newClapStatus = false;
+            newClapCount = Math.max((comment.clapCount || 0) - 1, 0);
+        } else {
+            await prisma.clapComment.create({
+                data: {
+                    userId,
+                    commentId: id,
+                    count: 1
+                }
+            });
+            newClapStatus = true;
+            newClapCount = (comment.clapCount || 0) + 1;
         }
-        const clap = await prisma.clapComment.create({
-            data: {
-                userId,
-                commentId: id,
-                count: 1,
-            }
-        });
-        const totalClaps = await prisma.clapComment.aggregate({
-            where: {
-                commentId: id
-            },
-            _sum: {
-                count: true
-            }
-        });
         await prisma.comment.update({
             where: { id },
-            data: {
-                clapCount: totalClaps._sum.count || 0,
-            }
+            data: { clapCount: newClapCount }
         });
 
-        await cache.evictPattern(`story_comments:${comment.storyId}:*`);
+        const cacheKeys = [
+            `clap:status:${userId}:${id}`,
+            `comment:claps:${id}`,
+            `comment:${id}`
+        ];
 
-        res.status(200).json({ msg: "Comment clapped successfully" });
+        await Promise.all(cacheKeys.map(key => cache.evictPattern(key)));
+
+        return res.status(200).json({
+            clapped: newClapStatus,
+            clapCount: newClapCount,
+            message: newClapStatus ? "Comment clapped successfully" : "Clap removed successfully"
+        });
     } catch (error: any) {
         console.error(error);
         return res.status(500).json({ error: error.message });
     }
 }
 
-export const removeClapComment = async (req: Request, res: Response): Promise<any> => {
+export const getBatchCommentClapData = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { id } = req.params;
+        const { commentIds } = req.body;
         const userId = req.session?.user?.userId || req.user?.userId;
+
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
-        const comment = await prisma.comment.findUnique({
-            where: { id }
-        });
-        if (!comment) {
-            return res.status(404).json({ error: "Comment not found" });
+
+        if (!Array.isArray(commentIds) || commentIds.length === 0) {
+            return res.status(400).json({ error: "Invalid comment ids" });
         }
-        await prisma.clapComment.delete({
-            where: {
-                userId_commentId: {
-                    userId,
-                    commentId: id
-                }
-            }
+
+        const comments = await prisma.comment.findMany({
+            where: { id: { in: commentIds } },
+            select: { id: true, clapCount: true }
         });
-        const commentCount = await prisma.comment.count({
+
+        
+        const userClaps = await prisma.clapComment.findMany({
             where: {
-                storyId: comment.storyId
-            }
-        });
-        await prisma.story.update({
-            where: {
-                id: comment.storyId
+                userId,
+                commentId: { in: commentIds }
             },
-            data: {
-                commentCount
-            }
+            select: { commentId: true }
         });
-        await cache.evictPattern(`story_comments:${comment.storyId}:*`);
-        res.status(200).json({ msg: "Comment clapped successfully" });
+
+        const userClapSet = new Set(userClaps.map(c => c.commentId));
+
+        const response = comments.reduce((acc, c) => {
+            acc[c.id] = {
+                clapCount: c.clapCount || 0,
+                userClap: userClapSet.has(c.id)
+            };
+            return acc;
+        }, {} as Record<string, { clapCount: number; userClap: boolean }>);
+
+        return res.status(200).json(response);
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
-}
+};
 
 export const updateComment = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -747,465 +645,378 @@ export const replycomment = async (req: Request, res: Response): Promise<any> =>
     }
 }
 
-export const followUser = async (req: Request, res: Response): Promise<any> => {
+
+export const toggleUserFollow = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
-
         if (userId === id) {
-            return res.status(400).json({ error: "You cannot follow yourself" });
-        }
-
-        const userToFollow = await prisma.user.findUnique({
-            where: { id }
-        });
-
-        if (!userToFollow) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(401).json({ error: "You cannot follow yourself" });
         }
 
         const existingFollow = await prisma.follow.findUnique({
             where: {
                 followerId_followingId: {
                     followerId: userId,
-                    followingId: id
-                }
-            }
-        });
-
-        if (existingFollow) {
-            res.status(200).json({ error: "You are already following this user" });
-        }
-
-        await prisma.follow.create({
-            data: {
-                followerId: userId,
-                followingId: id
+                    followingId: id,
+                },
             },
-            include: {
-                following: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true
-                    }
-                }
-            }
         });
 
-        await cache.evictPattern(`user_followers:${id}:*`);
-        await cache.evictPattern(`user_following:${userId}:*`);
-        await cache.evict("user_follow_status", [userId, id]);
-
-        res.status(200).json({ msg: "Followed successfully" });
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-}
-
-export const followStatus = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-
-        const existingFollow = await prisma.follow.findUnique({
-            where: {
-                followerId_followingId: {
-                    followerId: userId,
-                    followingId: id
-                }
-            }
-        });
+        let newFollowStatus: boolean;
+        let updatedCounts;
 
         if (existingFollow) {
-            return res.status(200).json({ following: !!existingFollow });
-        }
+            // unfollow
+            await prisma.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: id,
+                    },
+                },
+            });
 
-        res.status(200).json({ following: false });
-    } catch (error: any) {
-    }
-}
+            updatedCounts = await Promise.all([
+                prisma.user.update({
+                    where: { id: userId },
+                    data: { followingCount: { decrement: 1 } },
+                    select: { followingCount: true },
+                }),
+                prisma.user.update({
+                    where: { id },
+                    data: { followersCount: { decrement: 1 } },
+                    select: { followersCount: true },
+                }),
+            ]);
 
-export const unfollowUser = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-
-        await prisma.follow.delete({
-            where: {
-                followerId_followingId: {
+            newFollowStatus = false;
+        } else {
+            await prisma.follow.create({
+                data: {
                     followerId: userId,
-                    followingId: id
-                }
-            }
+                    followingId: id,
+                },
+            });
+
+            updatedCounts = await Promise.all([
+                prisma.user.update({
+                    where: { id: userId },
+                    data: { followingCount: { increment: 1 } },
+                    select: { followingCount: true },
+                }),
+                prisma.user.update({
+                    where: { id },
+                    data: { followersCount: { increment: 1 } },
+                    select: { followersCount: true },
+                }),
+            ]);
+
+            newFollowStatus = true;
+        }
+
+        const cacheKey = [
+            `follow:status:${userId}:${id}`,
+            `follow:data:${id}`,
+            `user:followers:${id}`,
+            `user:following:${userId}`,
+            `user:${id}`,
+            `user:${userId}`,
+        ];
+        await Promise.all(cacheKey.map((key) => cache.evictPattern(key)));
+
+        return res.status(200).json({
+            following: newFollowStatus,
+            followerCount: updatedCounts[1].followersCount,
+            followingCount: updatedCounts[0].followingCount,
+            msg: newFollowStatus ? "Followed successfully" : "Unfollowed successfully",
         });
-
-        await cache.evictPattern(`user_followers:${id}:*`);
-        await cache.evictPattern(`user_following:${userId}:*`);
-        await cache.evict("user_follow_status", [userId, id]);
-
-        res.status(200).json({ msg: "Unfollowed successfully" });
     } catch (error: any) {
         console.error(error);
         res.status(500).json({ error: error.message });
     }
-}
+};
 
-export const getUserFollowers = async (req: Request, res: Response): Promise<any> => {
+export const getUserFollowData = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const skip = (page - 1) * limit;
 
-        const cachedData = await cache.get("user_followers", [id, page.toString(), limit.toString()]);
+        const cacheKey = `follow:data`;
+        const cachedData = await cache.get(cacheKey, [id, (userId ? userId : '')]);
+
         if (cachedData) {
-            return res.status(200).json(cachedData);
-        }
-
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
+            return res.status(200).json(JSON.parse(cachedData));
         }
 
         const user = await prisma.user.findUnique({
-            where: { id }
+            where: { id },
+            select: { id: true }
         });
+
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        const followers = await prisma.follow.findMany({
-            where: {
-                followingId: id
-            },
-            include: {
-                follower: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true,
-                        bio: true,
+        const [followersCount, followingCount] = await Promise.all([
+            prisma.follow.count({
+                where: { followingId: id }
+            }),
+            prisma.follow.count({
+                where: { followerId: id }
+            })
+        ]);
+
+        let isFollowing = false;
+        if (userId && userId !== id) {
+            const followRelation = await prisma.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: userId,
+                        followingId: id
                     }
                 }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-
-        const totalFollowers = await prisma.follow.count({
-            where: {
-                followingId: id
-            }
-        });
+            });
+            isFollowing = !!followRelation;
+        }
 
         const responseData = {
-            followers,
-            pagination: {
-                page,
-                limit,
-                total: totalFollowers,
-                totalPages: Math.ceil(totalFollowers / limit),
-            }
+            followersCount,
+            followingCount,
+            isFollowing,
+            canFollow: userId && userId !== id
         };
 
-        await cache.set("user_followers", [id, page.toString(), limit.toString()], responseData, 600);
+        await cache.set(cacheKey, [JSON.stringify(responseData)], 300);
 
-        res.status(200).json(responseData);
+        return res.status(200).json(responseData);
+
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error('Get follow data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
 
-export const getUserFollowing = async (req: Request, res: Response): Promise<any> => {
+export const getBatchFollowData = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userIds } = req.body;
+        const currentUserId = req.session?.user?.userId || req.user?.userId;
+
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ error: "Invalid user IDs" });
+        }
+
+        if (userIds.length > 50) {
+            return res.status(400).json({ error: "Too many user IDs (max 50)" });
+        }
+
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true }
+        });
+
+        const existingUserIds = users.map(u => u.id);
+
+        const followersData = await prisma.follow.groupBy({
+            by: ['followingId'],
+            where: {
+                followingId: { in: existingUserIds }
+            },
+            _count: {
+                followingId: true
+            }
+        });
+
+        const followingData = await prisma.follow.groupBy({
+            by: ['followerId'],
+            where: {
+                followerId: { in: existingUserIds }
+            },
+            _count: {
+                followerId: true
+            }
+        });
+
+        let followingRelations: Record<string, boolean> = {};
+        if (currentUserId) {
+            const follows = await prisma.follow.findMany({
+                where: {
+                    followerId: currentUserId,
+                    followingId: { in: existingUserIds }
+                },
+                select: { followingId: true }
+            });
+
+            followingRelations = follows.reduce((acc, follow) => {
+                acc[follow.followingId] = true;
+                return acc;
+            }, {} as Record<string, boolean>);
+        }
+
+        const followersMap = followersData.reduce((acc, item) => {
+            acc[item.followingId] = item._count.followingId;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const followingMap = followingData.reduce((acc, item) => {
+            acc[item.followerId] = item._count.followerId;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const responseData = existingUserIds.reduce((acc, userId) => {
+            acc[userId] = {
+                followersCount: followersMap[userId] || 0,
+                followingCount: followingMap[userId] || 0,
+                isFollowing: followingRelations[userId] || false,
+                canFollow: currentUserId && currentUserId !== userId
+            };
+            return acc;
+        }, {} as Record<string, any>);
+
+        return res.status(200).json(responseData);
+
+    } catch (error: any) {
+        console.error('Batch follow data error:', error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const toggleStoryBookmark = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 20;
-        const skip = (page - 1) * limit;
-
-        const cachedData = await cache.get("user_following", [id, page.toString(), limit.toString()]);
-        if (cachedData) {
-            return res.status(200).json(cachedData);
-        }
 
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
-        }
-
-        const user = await prisma.user.findUnique({
-            where: { id }
-        });
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const following = await prisma.follow.findMany({
-            where: { followerId: id },
-            include: {
-                following: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true,
-                        isVerified: true,
-                        bio: true,
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-        const totalFollowing = await prisma.follow.count({
-            where: { followerId: id }
-        });
-
-        const responseData = {
-            following,
-            pagination: {
-                page,
-                limit,
-                total: totalFollowing,
-                totalPages: Math.ceil(totalFollowing / limit),
-            }
-        };
-
-        await cache.set("user_following", [id, page.toString(), limit.toString()], responseData, 600);
-
-        res.status(200).json(responseData);
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-}
-
-export const bookmarkStory = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" })
         }
 
         const story = await prisma.story.findUnique({
-            where: { id }
+            where: { id },
+            select: { id: true }
         });
+
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
 
         const existingBookmark = await prisma.bookmark.findUnique({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
-                }
-            }
+            where: { userId_storyId: { userId, storyId: id } }
         });
+
+        let newBookmarkStatus: boolean;
 
         if (existingBookmark) {
-            return res.status(400).json({ error: "Story already bookmarked" });
+            await prisma.$transaction(async (tx) => {
+                await tx.bookmark.delete({
+                    where: { userId_storyId: { userId, storyId: id } }
+                });
+
+                await Promise.all([
+                    tx.story.update({
+                        where: { id },
+                        data: { bookmarkCount: { decrement: 1 } }
+                    }),
+                    tx.user.update({
+                        where: { id: userId },
+                        data: { bookmarkCount: { decrement: 1 } }
+                    })
+                ]);
+            });
+
+            newBookmarkStatus = false;
+        } else {
+            await prisma.$transaction(async (tx) => {
+                await tx.bookmark.create({
+                    data: { userId, storyId: id }
+                });
+
+                await Promise.all([
+                    tx.story.update({
+                        where: { id },
+                        data: { bookmarkCount: { increment: 1 } }
+                    }),
+                    tx.user.update({
+                        where: { id: userId },
+                        data: { bookmarkCount: { increment: 1 } }
+                    })
+                ]);
+            });
+
+            newBookmarkStatus = true;
         }
 
-        await prisma.bookmark.create({
-            data: {
-                userId,
-                storyId: id,
-            },
-            include: {
-                story: {
-                    select: {
-                        id: true,
-                        title: true,
-                        subtitle: true,
-                        excerpt: true,
-                        coverImage: true,
-                        slug: true,
-                        readTime: true,
-                        author: {
-                            select: {
-                                id: true,
-                                username: true,
-                                name: true,
-                                avatar: true,
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        const bookmarkCount = await prisma.bookmark.count({
-            where: {
-                storyId: id
-            }
-        });
-        await prisma.story.update({
-            where: { id },
-            data: {
-                bookmarkCount
-            }
+        const [updatedStory, updatedUser] = await Promise.all([
+            prisma.story.findUnique({
+                where: { id },
+                select: { bookmarkCount: true }
+            }),
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { bookmarkCount: true }
+            })
+        ]);
+
+        const cacheKeys = [
+            `bookmark:status:${userId}:${id}`,
+            `bookmark:data:${id}`,
+            `story:bookmarks:${id}`,
+            `user:bookmarks:${userId}`,
+            `story:${id}`,
+            `user:${userId}`
+        ];
+        await Promise.all(cacheKeys.map(key => cache.evictPattern(key)));
+
+        return res.status(200).json({
+            bookmarked: newBookmarkStatus,
+            storyBookmarkCount: updatedStory?.bookmarkCount || 0,
+            userBookmarkCount: updatedUser?.bookmarkCount || 0,
+            message: newBookmarkStatus
+                ? "Story bookmarked successfully"
+                : "Bookmark removed successfully"
         });
 
-        await cache.evictPattern(`user_bookmarks:${userId}:*`);
-        await cache.evict("user_bookmark_status", [userId, id]);
-
-        res.status(200).json({ msg: "Story bookmarked successfully" });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.error("Toggle bookmark error:", error);
+        return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
 
-export const removeBookmark = async (req: Request, res: Response): Promise<any> => {
+
+export const populateFollowCounts = async () => {
     try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" })
-        }
-        await prisma.bookmark.delete({
-            where: {
-                userId_storyId: {
-                    userId,
-                    storyId: id
+        const users = await prisma.user.findMany({
+            select: { id: true }
+        });
+
+        for (const user of users) {
+            const [followersCount, followingCount] = await Promise.all([
+                prisma.follow.count({
+                    where: { followingId: user.id }
+                }),
+                prisma.follow.count({
+                    where: { followerId: user.id }
+                })
+            ]);
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    followersCount,
+                    followingCount
                 }
-            }
-        });
-
-        const bookmarkCount = await prisma.bookmark.count({
-            where: {
-                storyId: id
-            }
-        });
-        await prisma.story.update({
-            where: { id },
-            data: {
-                bookmarkCount
-            }
-        });
-
-        await cache.evictPattern(`user_bookmarks:${userId}:*`);
-        await cache.evict("user_bookmark_status", [userId, id]);
-
-        res.status(200).json({ msg: "Bookmark removed successfully" });
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-}
-
-export const getUserBookmarks = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { id } = req.params;
-        const userId = req.session?.user?.userId || req.user?.userId;
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 20;
-        const skip = (page - 1) * limit;
-
-        const cachedData = await cache.get("user_bookmarks", [userId || 'anonymous', page.toString(), limit.toString()]);
-        if (cachedData) {
-            return res.status(200).json(cachedData);
+            });
         }
 
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized Access" });
-        }
-
-        const bookmarks = await prisma.bookmark.findMany({
-            where: { userId },
-            include: {
-                story: {
-                    include: {
-                        author: {
-                            select: {
-                                id: true,
-                                username: true,
-                                name: true,
-                                avatar: true,
-                                isVerified: true,
-                            }
-                        },
-                        publication: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
-                                logo: true,
-                            }
-                        },
-                        tags: {
-                            include: {
-                                tag: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        slug: true,
-                                    }
-                                }
-                            }
-                        },
-                        _count: {
-                            select: {
-                                claps: true,
-                                comments: true,
-                                bookmarks: true,
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            skip,
-            take: limit
-        });
-
-        const totalBookmarks = await prisma.bookmark.count({
-            where: { userId }
-        });
-
-        const responseData = {
-            bookmarks,
-            pagination: {
-                page,
-                limit,
-                total: totalBookmarks,
-                totalPages: Math.ceil(totalBookmarks / limit),
-            }
-        };
-
-        await cache.set("user_bookmarks", [userId, page.toString(), limit.toString()], responseData, 900);
-
-        res.status(200).json(responseData);
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
+        console.log('Follow counts populated successfully');
+    } catch (error) {
+        console.error('Error populating follow counts:', error);
     }
-}
+};
+
 
 export const contentSearch = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -1240,7 +1051,7 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
                             }
                         }
                     ],
-                    status: 'PUBLISHED' 
+                    status: 'PUBLISHED'
                 },
                 include: {
                     author: {
@@ -1305,7 +1116,7 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
                     }
                 },
                 orderBy: [
-                    { 
+                    {
                         followers: {
                             _count: 'desc'
                         }
@@ -1337,15 +1148,15 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
                     name: true,
                     slug: true,
                     description: true,
-                    coverImage: true, 
+                    coverImage: true,
                     _count: {
                         select: {
-                            subscribers: true 
+                            subscribers: true
                         }
                     }
                 },
                 orderBy: [
-                    { 
+                    {
                         subscribers: {
                             _count: 'desc'
                         }
@@ -1383,7 +1194,7 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
                     }
                 },
                 orderBy: [
-                    { 
+                    {
                         stories: {
                             _count: 'desc'
                         }
@@ -1425,8 +1236,8 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
                 name: pub.name,
                 slug: pub.slug,
                 description: pub.description,
-                image: pub.coverImage, 
-                followerCount: pub._count.subscribers 
+                image: pub.coverImage,
+                followerCount: pub._count.subscribers
             })),
             topics: topics.map(topic => ({
                 id: topic.id,
@@ -1440,6 +1251,78 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
 
     } catch (err: any) {
         console.error("Error while searching", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+export const getBatchStoryMetaData = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { ids } = req.body;
+        const userId = req.session?.user?.userId || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Access" });
+        }
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: "Invalid story ids" });
+        }
+        if (ids.length > 50) {
+            return res.status(400).json({ error: "Too many story ids" });
+        }
+
+        const storyIds = [...new Set(ids as string[])];
+
+        const stories = await prisma.story.findMany({
+            where: {
+                id: { in: storyIds },
+            },
+            select: {
+                id: true,
+                clapCount: true,
+                allowClaps: true,
+            }
+        });
+
+        const claps = await prisma.clap.findMany({
+            where: {
+                userId,
+                storyId: { in: storyIds }
+            },
+            select: { storyId: true }
+        });
+
+        const userClaps = claps.reduce((acc, clap) => {
+            acc[clap.storyId] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+
+        const bookmarks = await prisma.bookmark.findMany({
+            where: {
+                userId,
+                storyId: { in: storyIds }
+            },
+            select: { storyId: true }
+        });
+
+        const userBookmarks = bookmarks.reduce((acc, bm) => {
+            acc[bm.storyId] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+
+        const response = stories.reduce((acc, story) => {
+            acc[story.id] = {
+                clapCount: story.clapCount || 0,
+                userClapped: userClaps[story.id] || false,
+                allowClaps: story.allowClaps,
+                bookmarked: userBookmarks[story.id] || false
+            };
+            return acc;
+        }, {} as Record<string, any>);
+
+        return res.status(200).json(response);
+    } catch (err: any) {
+        console.error('Batch story metadata error:', err);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 };

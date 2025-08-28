@@ -451,7 +451,6 @@ export const resolveReport = [
                 }
             });
 
-            // Take action based on report resolution
             if (status === 'RESOLVED' && action) {
                 switch (action) {
                     case 'DELETE_STORY':
