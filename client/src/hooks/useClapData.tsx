@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {useClapContext} from '../context/ClapContext';
-import type {ClapData} from '../types/clap';
-import { getStoryClaps } from '../api/featureServices';
-import { set } from 'date-fns';
+import { getStoryClapData, toggleStoryClap } from '../api/featureServices';
 
 export const useClapData = ({storyId}: {storyId: string}) => {
     const { claps, dispatch } = useClapContext();
@@ -18,7 +16,7 @@ export const useClapData = ({storyId}: {storyId: string}) => {
         setError(null);
 
         try {
-            const data = await getStoryClaps(storyId);
+            const data = await getStoryClapData(storyId);
             dispatch({
                 type: 'SET_CLAP_DATA',
                 storyId,
@@ -47,7 +45,7 @@ export const useClapData = ({storyId}: {storyId: string}) => {
         })
 
         try {
-            const result = await toggleClapStory(storyId);
+            const result = await toggleStoryClap(storyId);
 
             dispatch({
                 type: 'UPDATE_CLAP_COUNT',

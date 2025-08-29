@@ -1,10 +1,9 @@
 import { useRef } from "react";
 import { Image, Video } from "lucide-react";
 
-
 interface MediaUploadProps {
-  onImageUpload: (file: File) => void;
-  onVideoUpload: (file: File) => void;
+  onImageUpload: (imageSrc: string) => void;
+  onVideoUpload: (videoSrc: string) => void;
 }
 
 export default function MediaUpload({ onImageUpload, onVideoUpload }: MediaUploadProps) {
@@ -16,10 +15,15 @@ export default function MediaUpload({ onImageUpload, onVideoUpload }: MediaUploa
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        onImageUpload(event.target.result);
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          onImageUpload(result);
+        }
       };
       reader.readAsDataURL(file);
     }
+    // Reset input so same file can be uploaded again
+    e.target.value = '';
   };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,10 +31,15 @@ export default function MediaUpload({ onImageUpload, onVideoUpload }: MediaUploa
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        onVideoUpload(event.target.result);
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          onVideoUpload(result);
+        }
       };
       reader.readAsDataURL(file);
     }
+    // Reset input so same file can be uploaded again
+    e.target.value = '';
   };
 
   return (

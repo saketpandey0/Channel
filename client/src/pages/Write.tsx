@@ -2,6 +2,8 @@ import useDebounce from "../hooks/useDebounce";
 import { useState } from "react";
 import Editor from "../components/Editor/Editor";
 import { Button } from "../components/shad";
+import RichTextEditor from '../components/RichTextEditor';
+
 
 export const Write = () => {
     const [input, setInput] = useState('');
@@ -20,8 +22,8 @@ export const Write = () => {
                 </div>
             </header>
             <div className="">
-                <Editor></Editor>                   
-            </div>    
+                <RichTextEditor />
+            </div>
         </div>
     )
 }

@@ -1,9 +1,8 @@
 import { PiHandsClappingThin } from "react-icons/pi";
 import { useState, useEffect } from "react";
 import {
-  clapStory,
-  removeClap,
-  storyClapStatus,
+  toggleStoryClap,
+  getStoryClapData,
 } from "../../api/featureServices";
 
 interface ClapButtonProps {
@@ -23,7 +22,7 @@ export const ClapButton: React.FC<ClapButtonProps> = ({ story, storyId }) => {
   useEffect(() => {
     const fetchClapStatus = async () => {
       try {
-        const res = await storyClapStatus(storyId);
+        const res = await getStoryClapData(storyId);
         setClapped(res.clapped);
         if (res.clapCount !== undefined) {
           setClapCount(res.clapCount);
@@ -43,11 +42,11 @@ export const ClapButton: React.FC<ClapButtonProps> = ({ story, storyId }) => {
     setLoading(true);
     try {
       if (clapped) {
-        await removeClap(storyId);
+        await toggleStoryClap(storyId);
         setClapped(false);
         setClapCount((prev) => Math.max(prev - 1, 0));
       } else {
-        await clapStory(storyId);
+        await toggleStoryClap(storyId);
         setClapped(true);
         setClapCount((prev) => prev + 1);
       }

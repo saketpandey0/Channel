@@ -10,6 +10,7 @@ import { useRef, useState, useEffect } from "react";
 import { UserDropdown } from "./UserDropdown";
 import { SquarePen, BellRing, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { ModeToggle } from "./mode-toggle";
 
 export const Appbar = () => {
   const { useCurrentUser } = useAuth();
@@ -78,6 +79,7 @@ export const Appbar = () => {
         </Link>
         <div className="flex items-center gap-8">
           <ContentSearch />
+          <ModeToggle></ModeToggle>
           {user && (
             <div className="flex flex-row gap-6">
               <Link
