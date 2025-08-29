@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
@@ -6,46 +6,113 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
-import MainToolbar from "../MainToolbar";
-import MediaUpload from "../MediaUpload";
-import VoiceRecorder from "../VoiceRecorder";
-import InsertMenu from "../InsertMenu";
-import FloatingToolbar from "../FloatingToolbar";
-
-interface MediaItem{
-  id: number;
-  type: 'image' | 'video';
-  src: string;
-}
-
+import MainToolbar from "../utils/MainToolbar";
+import MediaUpload from "../utils/MediaUpload";
+import VoiceRecorder from "../utils/VoiceRecorder";
+import InsertMenu from "../utils/InsertMenu";
+import FloatingToolbar from "../utils/FloatingToolbar";
+import { $getSelection, $isRangeSelection } from "lexical";
+import { $createImageNode } from "../nodes/ImageNode"; 
+import { $createVideoNode } from "../nodes/VideoNode";
 
 export default function EditorPlugin() {
   const [editor] = useLexicalComposerContext();
-  const [anchorElem, setAnchorElem] = useState(null);
-  const [uploadedMedia, setUploadedMedia] = useState<MediaItem[]>([]);
+  const [anchorElem, setAnchorElem] = useState<HTMLElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const onRef = useCallback((elem) => {
+  const onRef = useCallback((elem: HTMLElement | null) => {
     if (elem !== null) {
       setAnchorElem(elem);
     }
   }, []);
 
-  const handleImageUpload = (imageSrc) => {
-    setUploadedMedia(prev => [...prev, { type: 'image', src: imageSrc, id: Date.now() }]);
+  const handleImageUpload = (imageSrc: string) => {
+    // Insert directly into editor at cursor position
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const imageNode = $createImageNode(imageSrc, "uploaded image");
+        selection.insertNodes([imageNode]);
+      }
+    });
   };
 
-  const handleVideoUpload = (videoSrc) => {
-    setUploadedMedia(prev => [...prev, { type: 'video', src: videoSrc, id: Date.now() }]);
+  const handleVideoUpload = (videoSrc: string) => {
+    // Insert directly into editor at cursor position
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const videoNode = $createVideoNode(videoSrc);
+        selection.insertNodes([videoNode]);
+      }
+    });
   };
 
   const handleToggleRecording = () => {
     setIsRecording(!isRecording);
   };
 
+  const triggerImageUpload = () => {
+    imageInputRef.current?.click();
+  };
+
+  const triggerVideoUpload = () => {
+    videoInputRef.current?.click();
+  };
+
+  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          handleImageUpload(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
+  const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          handleVideoUpload(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
   return (
     <>
       <MainToolbar editor={editor} />
+      
+      {/* Hidden file inputs for InsertMenu */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageInputChange}
+        className="hidden"
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleVideoInputChange}
+        className="hidden"
+      />
       
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Title Section */}
@@ -75,33 +142,7 @@ export default function EditorPlugin() {
         </div>
 
         {/* Uploaded Media Display */}
-        {uploadedMedia.length > 0 && (
-          <div className="mb-6 space-y-4">
-            {uploadedMedia.map((media) => (
-              <div key={media.id} className="relative group">
-                {media.type === 'image' ? (
-                  <img 
-                    src={media.src} 
-                    alt="Uploaded content" 
-                    className="w-full max-w-2xl mx-auto rounded-lg shadow-sm"
-                  />
-                ) : (
-                  <video 
-                    src={media.src} 
-                    controls 
-                    className="w-full max-w-2xl mx-auto rounded-lg shadow-sm"
-                  />
-                )}
-                <button
-                  onClick={() => setUploadedMedia(prev => prev.filter(m => m.id !== media.id))}
-                  className="absolute top-2 right-2 w-8 h-8 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Media is now inserted directly into editor at cursor position */}
 
         {/* Main Editor */}
         <div className="relative">
@@ -123,8 +164,8 @@ export default function EditorPlugin() {
           <div className="absolute left-0 top-4 -ml-12">
             <InsertMenu 
               editor={editor}
-              onInsertImage={() => document.querySelector('input[type="file"][accept="image/*"]')?.click()}
-              onInsertVideo={() => document.querySelector('input[type="file"][accept="video/*"]')?.click()}
+              onInsertImage={triggerImageUpload}
+              onInsertVideo={triggerVideoUpload}
               isRecording={isRecording}
               onToggleRecording={handleToggleRecording}
             />

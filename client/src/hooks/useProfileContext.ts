@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { ProfileUser, ProfileViewContext } from '../types/profile';
-import { followStatus } from '../api/featureServices';
+import { getUserFollowData } from '../api/featureServices';
 import { fetchUserProfile } from '../api/authService';
 
 export const useProfileContext = (profileUsername: string) => {
@@ -27,7 +27,7 @@ export const useProfileContext = (profileUsername: string) => {
         let isFollowing = false;
         
         if (!isOwner && user) {
-          isFollowing = await followStatus(profile.id);
+          isFollowing = await getUserFollowData(profile.id);
         }
 
         setViewContext({

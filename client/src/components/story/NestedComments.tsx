@@ -8,8 +8,7 @@ import {
     deleteComment,
     updateComment,
     replycomment,
-    clapComment,
-    removeClapComment
+    toggleCommentClap
 } from "../../api/featureServices";
 
 export const NestedComments = ({ storyId }: {
@@ -78,9 +77,9 @@ export const NestedComments = ({ storyId }: {
     const handleClap = async (commentId: string, hasClapped: boolean) => {
         try {
             if (hasClapped) {
-                await removeClapComment(storyId, commentId);
+                await toggleCommentClap(storyId, commentId);
             } else {
-                await clapComment(storyId, commentId);
+                await toggleCommentClap(storyId, commentId);
             }
             
             // Update the comment's clap status locally

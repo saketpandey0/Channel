@@ -108,7 +108,6 @@ body, html, #root {
     justify-content: justify-between;
   }
 } */
-
 .font-Bodoni {
   font-family: var(--font-serif-custom) !important;
 }

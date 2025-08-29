@@ -31,7 +31,7 @@ exports.getAdminUsers = [
                 where.OR = [
                     { username: { contains: search, mode: 'insensitive' } },
                     { email: { contains: search, mode: 'insensitive' } },
-                    { displayName: { contains: search, mode: 'insensitive' } },
+                    { name: { contains: search, mode: 'insensitive' } },
                 ];
             }
             if (status)
@@ -50,6 +50,11 @@ exports.getAdminUsers = [
                     isVerified: true,
                     createdAt: true,
                     lastActiveAt: true,
+                    avatar: true,
+                    bio: true,
+                    followersCount: true,
+                    followingCount: true,
+                    bookmarkCount: true,
                     _count: {
                         select: {
                             stories: true,

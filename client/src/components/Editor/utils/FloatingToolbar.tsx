@@ -8,6 +8,8 @@ import {
 } from 'lexical';
 import { Bold, Italic, Underline, Strikethrough, Code, Link } from "lucide-react";
 import { mergeRegister } from '@lexical/utils';
+import { $createCodeNode } from "@lexical/code";
+import { $createLinkNode } from "@lexical/link";
 import { type LexicalEditor } from "lexical";
 
 
@@ -72,7 +74,7 @@ export default function FloatingToolbar({ editor, anchorElem }: { editor: Lexica
   return (
     <div
       ref={toolbarRef}
-      className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-xl p-2 flex items-center space-x-1 transform -translate-x-1/2"
+      className="fixed z-50 bg-gray-900/90 text-white rounded-lg shadow-xl p-2 flex items-center space-x-1 transform -translate-x-1/2"
       style={{ top: position.top, left: position.left }}
     >
       <button
@@ -98,16 +100,24 @@ export default function FloatingToolbar({ editor, anchorElem }: { editor: Lexica
       </button>
       <button
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')}
-        className={`p-2 rounded hover:bg-gray-700 ${formatState.isStrikethrough ? 'bg-gray-700' : ''}`}
+        className={`p-2 rounded hover:bg-gray-700 ${formatState.isStrikethrough ? 'bg-gray-700 p-0' : ''}`}
         title="Strikethrough"
       >
         <Strikethrough size={16} />
       </button>
-      <div className="w-px h-6 bg-gray-600 mx-1"></div>
+      <div className="w-px py-1 h-4 bg-gray-600 mx-1"></div>
       <button
-        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')}
-        className={`p-2 rounded hover:bg-gray-700 ${formatState.isCode ? 'bg-gray-700' : ''}`}
-        title="Code"
+        onClick={() => {
+          editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const codeNode = $createCodeNode("javascript"); 
+              selection.insertNodes([codeNode]);
+            }
+          });
+        }}
+        className={`display:block rounded hover:bg-gray-700`}
+        title="Code Block"
       >
         <Code size={16} />
       </button>

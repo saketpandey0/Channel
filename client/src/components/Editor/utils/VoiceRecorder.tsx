@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
-import useSpeechRecognition from "../../hooks/useSpeechRecognition";
-import useTextToSpeech from "../../hooks/useTextToSpeech";
+import useSpeechRecognition from "../../../hooks/useSpeechRecognition";
+import useTextToSpeech from "../../../hooks/useTextToSpeech";
 import { Mic, MicOff, X, Pause, Play, Volume2 } from "lucide-react";
-import { Button } from "../shad";
+import { Button } from "../../shad";
 
 interface VoiceRecorderProps {
   onTranscriptReady: (transcript: string) => void;

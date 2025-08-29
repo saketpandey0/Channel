@@ -6,10 +6,13 @@ import {
 } from 'lexical';
 import { LinkNode } from '@lexical/link';
 import { CodeNode, CodeHighlightNode } from '@lexical/code';
+import { YouTubeNode } from './nodes/YoutubeNode';
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode } from '@lexical/list';
-import { Download } from 'lucide-react';
+import { Download, Video } from 'lucide-react';
 import EditorPlugin from './Plugins/EditorPlugin';
+import { ImageNode } from './nodes/ImageNode';
+import { VideoNode } from './nodes/VideoNode';
 
 
 
@@ -37,7 +40,6 @@ const theme = {
   code: 'bg-gray-100 p-4 rounded-lg font-mono text-sm my-4 overflow-x-auto',
 };
 
-// Editor configuration
 const editorConfig = {
   namespace: 'MediumEditor',
   nodes: [
@@ -50,6 +52,9 @@ const editorConfig = {
     QuoteNode,
     ListNode,
     ListItemNode,
+    YouTubeNode,
+    VideoNode,
+    ImageNode,
   ],
   onError(error: any) {
     console.error('Editor Error:', error);
