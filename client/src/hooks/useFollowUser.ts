@@ -20,7 +20,7 @@ export const useFollowUser = (userId: string, initialFollowing?: boolean) => {
     if (userId) {
       fetchFollowStatus();
     }
-  }, [userId]);
+  }, [isFollowing, userId]);
 
   const toggleFollow = async () => {
     setIsLoading(true);

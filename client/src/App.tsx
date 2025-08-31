@@ -8,8 +8,7 @@ import Statsboard from './components/Analytics/Statsboard';
 import { ProfileWrapper } from './components/Profile/ProfileWrapper';
 // import ContentWrapper from './components/searchContenet/ContentWrapper';
 import PublicationPage from './pages/PublicationPage';
-import RichTextEditor from './components/Editor/RichTextEditor';
-
+import { AdminWrapper } from './components/Admin/AdminWrapper';
 
 function App() {
   return (
@@ -19,6 +18,7 @@ function App() {
         <Route path="/stats" element={<Statsboard />} />
         <Route path="/:username/:tab?" element={<ProfileWrapper />} />
         {/* <Route path="/:username/:tab?" element={<ContentWrapper />} /> */}
+        <Route path="/admin" element={<AdminWrapper />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/publication/:id" element={<PublicationPage  />} />
         <Route path="/editor" element={<Write />} />

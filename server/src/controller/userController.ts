@@ -189,9 +189,11 @@ export const getUserProfile = async (req: Request, res: Response): Promise<any> 
         id: true,
         name: true,
         username: true,
+        email: true,
         bio: true,
         avatar: true,
-        isVerified: true
+        isVerified: true,
+        role: true
       }
     });
 

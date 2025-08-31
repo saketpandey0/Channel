@@ -1,7 +1,10 @@
 import {Router} from 'express'
 import { toggleClapStory, getStoryClapData, getBatchStoryMetaData, addComment, getComments, updateComment, deleteComment, replycomment, toggleCommentClap, getBatchCommentClapData, toggleUserFollow, getUserFollowData, getBatchFollowData, toggleStoryBookmark, contentSearch } from '../controller/featuresController';
+import { authenticate } from '../middlewares/middleware';
 
 const router = Router();
+
+router.use(authenticate);
 
 
 router.post("/story/:id/clap", toggleClapStory);
