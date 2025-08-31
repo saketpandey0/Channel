@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader } from "../shad";
+import { Card, CardContent, CardHeader } from "../Shad";
 import {
   LineChart,
   Line,

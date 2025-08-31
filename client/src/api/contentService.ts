@@ -3,19 +3,17 @@ import { BACKEND_URL } from "../const";
 
 
 
-export const uploadImageService = async (file: File) => {
+export const uploadImageService = async (formData: FormData) => {
   try {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const response = await axios.post(`${BACKEND_URL}/api/upload/image`, formData, {
+    console.log("uploading")
+    const response = await axios.post(`${BACKEND_URL}/api/content/upload/image`, formData, {
         withCredentials: true, 
         headers: {
           "Content-Type": "multipart/form-data",
         },
       }
     );
-
+    console.log("response.data",response.data)
     return response.data; 
   } catch (error: any) {
     console.error("Upload failed:", error.response?.data || error.message);
@@ -24,11 +22,8 @@ export const uploadImageService = async (file: File) => {
 };
 
 
-export const uploadVideoService = async (file: File) => {
+export const uploadVideoService = async (formData: FormData) => {
   try {
-    const formData = new FormData();
-    formData.append("video", file);
-
     const response = await axios.post(`${BACKEND_URL}/api/upload/video`, formData, {
         withCredentials: true, 
         headers: {
@@ -36,7 +31,6 @@ export const uploadVideoService = async (file: File) => {
         },
       }
     );
-
     return response.data; 
   } catch (error: any) {
     console.error("Upload failed:", error.response?.data || error.message);

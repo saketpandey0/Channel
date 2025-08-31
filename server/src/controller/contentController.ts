@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
+import {mkdirSync} from 'fs';
 import fs from 'fs/promises';
 import prisma from "../db"
 import { cache } from '../cache/redisCache';
@@ -11,6 +12,7 @@ import { cache } from '../cache/redisCache';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = file.mimetype.startsWith('image/') ? 'uploads/images/' : 'uploads/videos/';
+    mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
@@ -25,6 +27,7 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
+    console.log("uploading file", file.mimetype);
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
@@ -38,6 +41,8 @@ export const uploadImage = [
     upload.single('image'),
     async (req: Request, res: Response): Promise<any> => {
         try {
+            console.log("start upload");
+            const {storyId} = req.params;
             const userId = req.session?.user?.userId || req.user?.userId;
             if(!userId){
                 return res.status(401).json({error: "Unauthorized Access"});
@@ -45,6 +50,7 @@ export const uploadImage = [
             if(!req.file){
                 return res.status(400).json({error: "No file uploaded"});
             }
+            console.log("upploading")
             const media = await prisma.media.create({
                 data: {
                     filename: req.file.originalname,
@@ -56,6 +62,14 @@ export const uploadImage = [
                     type: req.file.mimetype.startsWith('image/') ? 'IMAGE' : 'VIDEO',
                 }
             });
+
+            const storyMedia = await prisma.storyMedia.create({
+              data: {
+                storyId,
+                mediaId: media.id,
+              },
+            });
+            console.log("uploaded image", media);
             const image_url = `/api/media/${media.id}`;
 
             res.status(201).json({
@@ -76,6 +90,7 @@ export const uploadVideo = [
     upload.single('video'),
     async (req: Request, res: Response): Promise<any> => {
         try {
+            const {storyId} = req.params;
             const userId = req.session?.user?.userId || req.user?.userId;
             if(!userId){
                 return res.status(401).json({error: "Unauthorized Access"});
@@ -95,12 +110,20 @@ export const uploadVideo = [
                 }
             });
 
+            const storyMedia = await prisma.storyMedia.create({
+              data: {
+                storyId,
+                mediaId: media.id,
+              },
+            });
+
             const video_url = `/api/media/${media.id}`;
             res.status(201).json({
                 id: media.id,
                 url: video_url,
                 filename: media.filename,
                 size: media.size,
+                storyMediaId: storyMedia.id,
             });
         }catch(error: any){
             console.error("Error uploading video:", error);

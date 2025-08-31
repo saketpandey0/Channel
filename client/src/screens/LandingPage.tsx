@@ -1,4 +1,4 @@
-import { Card, CardDescription, CardHeader, Spotlight } from "../components/shad";
+import { Card, CardDescription, CardHeader, Spotlight } from "../components/Shad";
 import {motion} from 'motion/react'
 import Feautres from "../components/Features";
 

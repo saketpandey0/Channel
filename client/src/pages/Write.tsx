@@ -1,8 +1,8 @@
 import useDebounce from "../hooks/useDebounce";
 import { useState } from "react";
 import Editor from "../components/Editor/Editor";
-import { Button } from "../components/shad";
-import RichTextEditor from '../components/RichTextEditor';
+import { Button } from "../components/Shad";
+import RichTextEditor from '../components/Editor/RichTextEditor';
 
 
 export const Write = () => {

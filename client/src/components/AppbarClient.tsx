@@ -1,6 +1,6 @@
 "use client";
 import { Appbar } from "./Appbar";
-import { Container } from "./shad/ui/container";
+import { Container } from "./Shad/ui/container";
 
 
 export const AppbarClient = () => {

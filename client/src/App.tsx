@@ -1,14 +1,14 @@
 import { Auth } from './components/Auth/Auth';
 import { LandingPage } from './screens/LandingPage'
 import { Routes, Route } from "react-router-dom";
-import { StoriesLayout } from './components/story/StoriesLayout';
+import { StoriesLayout } from './components/Story/StoriesLayout';
 import { Write } from './pages/Write';
 import { Notification } from './pages/notification';
 import Statsboard from './components/Analytics/Statsboard';
-import { ProfileWrapper } from './components/profile/ProfileWrapper';
+import { ProfileWrapper } from './components/Profile/ProfileWrapper';
 // import ContentWrapper from './components/searchContenet/ContentWrapper';
 import PublicationPage from './pages/PublicationPage';
-import RichTextEditor from './components/RichTextEditor';
+import RichTextEditor from './components/Editor/RichTextEditor';
 
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
         <Route path="/:username/:tab?" element={<ProfileWrapper />} />
         {/* <Route path="/:username/:tab?" element={<ContentWrapper />} /> */}
         <Route path="/auth" element={<Auth />} />
-        <Route path="/publication" element={<PublicationPage />} />
+        <Route path="/publication/:id" element={<PublicationPage  />} />
         <Route path="/editor" element={<Write />} />
         <Route path="/notification" element={<Notification />} />
         

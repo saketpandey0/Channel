@@ -3,7 +3,7 @@ import { RxPerson } from "react-icons/rx";
 import { MdOutlineBookmarks } from "react-icons/md";
 import { CgNotes } from "react-icons/cg";
 import { TfiBarChart } from "react-icons/tfi";
-import { Separator } from "./shad";
+import { Separator } from "./Shad";
 import { Link } from "react-router-dom";
 import { PiStarFourFill } from "react-icons/pi";
 import { useAuth } from "../context/AuthContext";

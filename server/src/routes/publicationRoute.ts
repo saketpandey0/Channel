@@ -11,7 +11,7 @@ router.get('/:id', getPublication);
 router.post('/create', createPublication);
 router.delete('/delete/:id', deletePublication);
 router.put('/update/:id', updatePublication);
-router.get('/stories/:id', getPublicationStories);
+router.get('/:id/stories', getPublicationStories);
 router.post('/submit/:id', submitStoryToPublication);
 router.put('/update/:id/submission/:storyId', updateSubmissionStatus);
 router.get('/writers/:id', getPublicationWriters);

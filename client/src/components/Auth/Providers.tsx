@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, Separator } from "../shad";
+import { Card, CardContent, CardHeader, CardTitle, Separator } from "../Shad";
 import { Link } from "react-router-dom";
-import { Button } from "../shad";
+import { Button } from "../Shad";
 import type React from "react";
 import { useAuth } from "../../context/AuthContext";
 

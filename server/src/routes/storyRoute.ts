@@ -11,7 +11,7 @@ router.post('/create', createStory);
 router.get('/getstories', getStories);
 router.get('/getstory/:id', getStory);
 router.delete('/delete/:id', deleteStory);
-router.put('/updatestory/:id', updateStory);
+router.put('/update/story/:id', updateStory);
 router.get('/getfeed', getFeed);
 router.get('/gettrendingstories', getTrendingStories);
 router.post('/publish/:id', publishStory);
@@ -20,5 +20,6 @@ router.get('/drafts', getUserDrafts);
 router.get('/published', getUserPublishedStories);
 router.get('/stats/:id', getStoriesStats);
 router.get('/versions/:id', getStoryVersions);
+router.get('/version/:versionId', getStory);
 
 export default router;
