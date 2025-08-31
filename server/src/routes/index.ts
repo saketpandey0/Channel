@@ -9,7 +9,12 @@ import anlyticsRoute from "./anlyticsRoute";
 import contentRoute from "./contentRoute";
 
 const router = Router();
-
+router.use((req, res, next) => {
+  console.log("Session ID:", req.sessionID);
+  console.log("Session Data:", req.session);
+  console.log("Passport User:", req.user);
+  next();
+});
 
 router.use("/auth", userRoute);
 router.use("/story", storyRoute);

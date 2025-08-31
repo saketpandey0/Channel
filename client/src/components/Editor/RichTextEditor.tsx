@@ -1,33 +1,22 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-  import {
-    Bold,
-    Italic,
-    Underline,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    Link,
-    Image,
-    Video,
-    Mic,
-    MicOff,
-    Undo,
-    Redo,
-    List,
-    ListOrdered,
-    Quote,
-    Code,
-    Youtube,
-    Save,
-    Upload,
-    X,
-    Tag,
-    Settings,
-  } from "lucide-react";
+import { Save, Upload, Settings } from "lucide-react";
 import { uploadImageService, uploadVideoService } from "../../api/contentService";
 import { createStory, updateStory } from "../../api/storyService";
-import type { MediaItem, StoryData, ToolbarButtonProps } from "./types";
-
+import type { MediaItem, StoryData } from "./types";
+import Toolbar from "./Toolbar";
+import SettingModal from "./Modals/SettingModal";
+import LinkModal, { getYouTubeEmbedUrl } from "./Modals/LinkModal";
+import YoutubeModal from "./Modals/YoutubeModal";
+import MediaUploads from "./MediaUploads";
+import { 
+  generateExcerpt, 
+  getWordCount, 
+  getReadingTime, 
+  insertList as utilInsertList, 
+  insertBlockquote as utilInsertBlockquote, 
+  insertCodeBlock as utilInsertCodeBlock,
+  isCommandActive as utilIsCommandActive
+} from "./utils";
 
 const IntegratedStoryEditor: React.FC = () => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -44,9 +33,7 @@ const IntegratedStoryEditor: React.FC = () => {
   const [linkUrl, setLinkUrl] = useState<string>("");
   const [youtubeUrl, setYoutubeUrl] = useState<string>("");
   const [selectedRange, setSelectedRange] = useState<Range | null>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null,
-  );
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
@@ -159,12 +146,6 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  const generateExcerpt = (text: string): string => {
-    const words = text.split(" ").slice(0, 30);
-    return words.join(" ") + (words.length >= 30 ? "..." : "");
-  };
-
-  // Editor functions
   const saveToHistory = useCallback(() => {
     if (editorRef.current) {
       const newHistory = history.slice(0, historyIndex + 1);
@@ -172,7 +153,6 @@ const IntegratedStoryEditor: React.FC = () => {
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
 
-      // Update content in story data
       setStoryData((prev) => ({
         ...prev,
         content: editorRef.current?.innerHTML || "",
@@ -190,44 +170,7 @@ const IntegratedStoryEditor: React.FC = () => {
   );
 
   const isCommandActive = (command: string): boolean => {
-    try {
-      if (command === "insertUnorderedList") {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          let element: Node | null  = selection.getRangeAt(0).commonAncestorContainer;
-          if (element.nodeType === Node.TEXT_NODE) {
-            element = element.parentElement;
-          }
-          return !!(element as Element)?.closest("ul");
-        }
-        return false;
-      }
-      if (command === "insertOrderedList") {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          let element: Node | null  = selection.getRangeAt(0).commonAncestorContainer;
-          if (element.nodeType === Node.TEXT_NODE) {
-            element = element.parentElement;
-          }
-          return !!(element as Element)?.closest("ol");
-        }
-        return false;
-      }
-      if (command === "blockquote") {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          let element: Node | null  = selection.getRangeAt(0).commonAncestorContainer;
-          if (element.nodeType === Node.TEXT_NODE) {
-            element = element.parentElement;
-          }
-          return !!(element as Element)?.closest("blockquote");
-        }
-        return false;
-      }
-      return document.queryCommandState(command);
-    } catch (e) {
-      return false;
-    }
+    return utilIsCommandActive(command);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,7 +204,6 @@ const IntegratedStoryEditor: React.FC = () => {
     }
     e.target.value = '';
   };
-
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -308,7 +250,6 @@ const IntegratedStoryEditor: React.FC = () => {
     e.target.value = "";
   };
 
-  // Voice recording functionality
   const toggleRecording = async () => {
     if (!isRecording) {
       try {
@@ -328,19 +269,9 @@ const IntegratedStoryEditor: React.FC = () => {
             type: "audio/wav",
           });
 
-          // Upload as video type (since your schema only has IMAGE/VIDEO)
-          const formData = new FormData();
-          formData.append("video", audioFile);
-
           try {
-            const response = await fetch("/api/upload/video", {
-              method: "POST",
-              body: formData,
-              credentials: "include",
-            });
-
-            if (response.ok) {
-              const result = await response.json();
+            const result = await uploadMedia(audioFile, 'video');
+            if (result) {
 
               const audioContainer = document.createElement("div");
               audioContainer.style.margin = "16px 0";
@@ -428,8 +359,6 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  
-
   const insertYouTubeVideo = () => {
     if (!youtubeUrl) return;
 
@@ -471,121 +400,17 @@ const IntegratedStoryEditor: React.FC = () => {
     setSelectedRange(null);
   };
 
-  // List and formatting functions
+  // Utility wrapper functions
   const insertList = (ordered: boolean = false) => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      let parentElement: Node | null = range.commonAncestorContainer;
-      if (parentElement.nodeType === Node.TEXT_NODE) {
-        parentElement = parentElement.parentElement;
-      }
-
-      const currentList = (parentElement as Element)?.closest("ul, ol");
-
-      if (currentList) {
-        const listItems = currentList.querySelectorAll("li");
-        const fragment = document.createDocumentFragment();
-
-        listItems.forEach((li) => {
-          const p = document.createElement("p");
-          p.innerHTML = li.innerHTML;
-          fragment.appendChild(p);
-        });
-
-        currentList.parentNode?.replaceChild(fragment, currentList);
-      } else {
-        const listTag = ordered ? "ol" : "ul";
-        const list = document.createElement(listTag);
-        list.style.marginLeft = "20px";
-        list.style.marginTop = "8px";
-        list.style.marginBottom = "8px";
-
-        const selectedText = selection.toString();
-        const listItem = document.createElement("li");
-        listItem.style.marginBottom = "4px";
-
-        if (selectedText) {
-          listItem.textContent = selectedText;
-          range.deleteContents();
-        } else {
-          listItem.innerHTML = "<br>";
-        }
-
-        list.appendChild(listItem);
-        range.insertNode(list);
-
-        const newRange = document.createRange();
-        newRange.setStart(listItem, 0);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
-
-      saveToHistory();
-    }
+    utilInsertList(ordered, editorRef, saveToHistory);
   };
 
   const insertBlockquote = () => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      let parentElement: Node | null = range.commonAncestorContainer;
-      if (parentElement.nodeType === Node.TEXT_NODE) {
-        parentElement = parentElement.parentElement;
-      }
-
-      const currentBlockquote = (parentElement as Element)?.closest(
-        "blockquote",
-      );
-
-      if (currentBlockquote) {
-        const p = document.createElement("p");
-        p.innerHTML = currentBlockquote.innerHTML;
-        currentBlockquote.parentNode?.replaceChild(p, currentBlockquote);
-      } else {
-        const blockquote = document.createElement("blockquote");
-        blockquote.style.borderLeft = "4px solid #e5e7eb";
-        blockquote.style.paddingLeft = "16px";
-        blockquote.style.margin = "16px 0";
-        blockquote.style.fontStyle = "italic";
-        blockquote.style.color = "#6b7280";
-
-        const selectedText = selection.toString();
-        if (selectedText) {
-          blockquote.textContent = selectedText;
-          range.deleteContents();
-        } else {
-          blockquote.innerHTML = "Quote text...";
-        }
-
-        range.insertNode(blockquote);
-        range.collapse(false);
-      }
-
-      saveToHistory();
-    }
+    utilInsertBlockquote(saveToHistory);
   };
 
   const insertCodeBlock = () => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const pre = document.createElement("pre");
-      const code = document.createElement("code");
-      code.style.backgroundColor = "#f4f4f4";
-      code.style.padding = "12px";
-      code.style.display = "block";
-      code.style.borderRadius = "4px";
-      code.style.fontFamily = "monospace";
-      code.textContent = selection.toString() || "Code block";
-      pre.appendChild(code);
-
-      range.deleteContents();
-      range.insertNode(pre);
-      range.collapse(false);
-      saveToHistory();
-    }
+    utilInsertCodeBlock(saveToHistory);
   };
 
   // Undo/Redo functions
@@ -655,7 +480,10 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   }, []);
 
-  
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    alert("Media URL copied to clipboard");
+  };
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-white p-6">
@@ -692,10 +520,10 @@ const IntegratedStoryEditor: React.FC = () => {
         <div className="flex items-center gap-4 text-sm text-gray-500">
           {saveStatus === "saving" && <span>Saving...</span>}
           {saveStatus === "saved" && (
-            <span className="text-green-600">✓ Saved</span>
+            <span className="text-green-600">Saved</span>
           )}
           {saveStatus === "error" && (
-            <span className="text-red-600">✗ Save failed</span>
+            <span className="text-red-600">Save failed</span>
           )}
           {lastSaved && (
             <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
@@ -705,7 +533,22 @@ const IntegratedStoryEditor: React.FC = () => {
 
       {/* Main Toolbar */}
       <div className="sticky top-0 z-10 mb-6 border-b border-gray-200 bg-white p-4">
-        <Toolbar></Toolbar>
+        <Toolbar
+          execCommand={execCommand}
+          isCommandActive={isCommandActive}
+          handleUndo={handleUndo}
+          handleRedo={handleRedo}
+          insertList={insertList}
+          insertBlockquote={insertBlockquote}
+          insertCodeBlock={insertCodeBlock}
+          handleLinkClick={handleLinkClick}
+          handleYouTubeClick={handleYouTubeClick}
+          toggleRecording={toggleRecording}
+          isRecording={isRecording}
+          isUploading={isUploading}
+          fileInputRef={fileInputRef}
+          videoInputRef={videoInputRef}
+        />
       </div>
 
       {/* Upload Progress */}
@@ -832,150 +675,58 @@ const IntegratedStoryEditor: React.FC = () => {
       </div>
 
       {/* Settings Modal */}
-      {showSettings && (
-        <SettingModal></SettingModal>
-      )}
+      <SettingModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        storyData={storyData}
+        onStoryDataChange={setStoryData}
+        tagInput={tagInput}
+        onTagInputChange={setTagInput}
+        onAddTag={addTag}
+        onRemoveTag={removeTag}
+      />
 
       {/* YouTube Video Dialog */}
-      {showYouTubeDialog && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold">Insert YouTube Video</h3>
-            <input
-              type="url"
-              placeholder="Enter YouTube URL"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              autoFocus
-            />
-            <div className="mb-4 text-sm text-gray-500">
-              Paste a YouTube URL like: https://www.youtube.com/watch?v=...
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowYouTubeDialog(false);
-                  setYoutubeUrl("");
-                  setSelectedRange(null);
-                }}
-                className="rounded-lg px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={insertYouTubeVideo}
-                disabled={!youtubeUrl}
-                className="rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Insert
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <YoutubeModal
+        isOpen={showYouTubeDialog}
+        onClose={() => {
+          setShowYouTubeDialog(false);
+          setYoutubeUrl("");
+          setSelectedRange(null);
+        }}
+        youtubeUrl={youtubeUrl}
+        onUrlChange={setYoutubeUrl}
+        onInsert={insertYouTubeVideo}
+      />
 
-      {showLinkDialog && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold">Insert Link</h3>
-            <input
-              type="url"
-              placeholder="Enter URL"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-gray-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              autoFocus
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowLinkDialog(false);
-                  setLinkUrl("");
-                  setSelectedRange(null);
-                }}
-                className="rounded-lg px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={insertLink}
-                disabled={!linkUrl}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Insert
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Link Dialog */}
+      <LinkModal
+        isOpen={showLinkDialog}
+        onClose={() => {
+          setShowLinkDialog(false);
+          setLinkUrl("");
+          setSelectedRange(null);
+        }}
+        linkUrl={linkUrl}
+        onUrlChange={setLinkUrl}
+        onInsert={insertLink}
+      />
 
       {/* Uploaded Media Gallery */}
-      {uploadedMedia.length > 0 && (
-        <div className="mt-8 rounded-lg bg-gray-50 p-4">
-          <h4 className="mb-3 text-sm font-medium text-gray-700">
-            Uploaded Media
-          </h4>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {uploadedMedia.map((media) => (
-              <div key={media.id} className="group relative">
-                {media.type === "image" ? (
-                  <img
-                    src={media.url}
-                    alt={media.filename}
-                    className="h-20 w-full rounded border object-cover"
-                  />
-                ) : (
-                  <div className="flex h-20 w-full items-center justify-center rounded border bg-gray-200">
-                    <Video size={24} className="text-gray-400" />
-                  </div>
-                )}
-                <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded bg-black opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(media.url);
-                      alert("Media URL copied to clipboard");
-                    }}
-                    className="rounded bg-blue-600 px-2 py-1 text-xs text-white"
-                  >
-                    Copy URL
-                  </button>
-                </div>
-                <div
-                  className="mt-1 truncate text-xs text-gray-500"
-                  title={media.filename}
-                >
-                  {media.filename}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <MediaUploads uploadedMedia={uploadedMedia} onCopyUrl={handleCopyUrl} />
 
       {/* Stats and Footer */}
       <div className="mt-8 border-t border-gray-200 pt-4">
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex gap-4">
             <span>
-              Words:{" "}
-              {editorRef.current?.textContent
-                ?.split(" ")
-                .filter((w) => w.length > 0).length || 0}
+              Words: {getWordCount(editorRef.current?.textContent || "")}
             </span>
             <span>
               Characters: {editorRef.current?.textContent?.length || 0}
             </span>
             <span>
-              Read time:{" "}
-              {Math.max(
-                1,
-                Math.ceil(
-                  (editorRef.current?.textContent?.split(" ").length || 0) /
-                    200,
-                ),
-              )}{" "}
-              min
+              Read time: {getReadingTime(editorRef.current?.textContent || "")} min
             </span>
           </div>
           <div className="flex items-center gap-4">

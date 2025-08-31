@@ -614,10 +614,13 @@ const replycomment = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 });
 exports.replycomment = replycomment;
 const toggleUserFollow = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     try {
         const { id } = req.params;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        console.log("userId", userId, id);
+        console.log("toogleUserFollow", (_d = req.session) === null || _d === void 0 ? void 0 : _d.user);
+        console.log("toogleUserFollow 2", req.user);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
@@ -704,12 +707,16 @@ exports.toggleUserFollow = toggleUserFollow;
 const getUserFollowData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
+        console.log("calling getUserFollowData");
         const { id } = req.params;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-        const cacheKey = `follow:data`;
-        const cachedData = yield redisCache_1.cache.get(cacheKey, [id, (userId ? userId : '')]);
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Accesss" });
+        }
+        const cacheKey = `follow:data:${id}:${userId}`;
+        const cachedData = yield redisCache_1.cache.get(cacheKey, []);
         if (cachedData) {
-            return res.status(200).json(JSON.parse(cachedData));
+            return res.status(200).json(cachedData);
         }
         const user = yield db_1.default.user.findUnique({
             where: { id },
@@ -742,9 +749,10 @@ const getUserFollowData = (req, res) => __awaiter(void 0, void 0, void 0, functi
             followersCount,
             followingCount,
             isFollowing,
-            canFollow: userId && userId !== id
+            canFollow: !!userId && userId !== id
         };
         yield redisCache_1.cache.set(cacheKey, [JSON.stringify(responseData)], 300);
+        console.log("responseData", responseData);
         return res.status(200).json(responseData);
     }
     catch (error) {

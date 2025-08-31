@@ -650,6 +650,9 @@ export const toggleUserFollow = async (req: Request, res: Response): Promise<any
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+        console.log("userId", userId, id);
+        console.log("toogleUserFollow", req.session?.user);
+        console.log("toogleUserFollow 2", req.user);
 
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
@@ -743,14 +746,18 @@ export const toggleUserFollow = async (req: Request, res: Response): Promise<any
 
 export const getUserFollowData = async (req: Request, res: Response): Promise<any> => {
     try {
+        console.log("calling getUserFollowData");
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+        if(!userId){
+            return res.status(401).json({error: "Unauthorized Accesss"});
+        }
 
-        const cacheKey = `follow:data`;
-        const cachedData = await cache.get(cacheKey, [id, (userId ? userId : '')]);
+        const cacheKey = `follow:data:${id}:${userId}`;
+        const cachedData = await cache.get(cacheKey, []);
 
         if (cachedData) {
-            return res.status(200).json(JSON.parse(cachedData));
+            return res.status(200).json(cachedData);
         }
 
         const user = await prisma.user.findUnique({
@@ -788,11 +795,11 @@ export const getUserFollowData = async (req: Request, res: Response): Promise<an
             followersCount,
             followingCount,
             isFollowing,
-            canFollow: userId && userId !== id
+            canFollow: !!userId && userId !== id
         };
 
         await cache.set(cacheKey, [JSON.stringify(responseData)], 300);
-
+        console.log("responseData", responseData);
         return res.status(200).json(responseData);
 
     } catch (error: any) {

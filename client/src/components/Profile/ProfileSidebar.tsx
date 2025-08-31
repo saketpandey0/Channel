@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserAvatar } from '../Shad/ui/userAvatar';
+import { Avatar } from '../Shad';
 import { Button } from '../Shad';
 import { Link } from 'react-router-dom';
 import { useFollowUser } from '../../hooks/useFollowUser';
@@ -13,8 +13,9 @@ interface ProfileSidebarProps {
 }
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEditProfile }) => {
-  const { isFollowing, toggleFollow, isLoading } = useFollowUser(user.id, viewContext.isFollowing);
+  const { isFollowing, toggleFollow, isLoading, data } = useFollowUser(user.id, viewContext.isFollowing);
   const editRef = useRef<HTMLButtonElement>(null);
+  console.log("sidebar", data)
 
   const footerItems = [
     { name: "Help", pageLink: "/help" },
@@ -44,17 +45,21 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
   return (
     <div className="space-y-6">
       <div className='flex flex-col bg-slate-100 shadow-slate-700/50 hover:shadow-xl min-h-[calc(100vh-48px)] p-6 rounded-xl shadow-sm border border-gray-100'>
-        <div className='p-4'>
-          <UserAvatar
-            className="h-24 w-24 rounded-full transition group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:-rotate-1"
-            src={user.avatar || "/default-avatar.png"}
-          />
+        <div className='p-4 flex flex-col gap-2'>
+            <Avatar className="border border-gray-600 size-18">
+              <img
+                src={user.avatar}
+                // alt={user.name}
+                className="size-18 rounded-full object-cover"
+              />  
+            </Avatar>  
         </div>
-        
+        <div>
+        </div>
         <div className='flex flex-col justify-center pt-2 pl-4'>    
           <span className='text-base font-semibold text-black'>{user.name}</span>
           <span className='cursor-pointer text-base font-semibold text-gray-700 hover:text-black'>
-            {formatCount(user.followerCount)} followers
+            {formatCount(data.followerCount)} followers
           </span>
           {user.location && (
             <span className='text-sm text-gray-600'>{user.location}</span>

@@ -19,10 +19,11 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username }) => {
   const [selectedContent, setSelectedContent] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const editRef = useRef<HTMLButtonElement>(null);
-
   const handleContentClick = (content: any) => {
     setSelectedContent(content);
   };
+
+  console.log("profileUser", profileUser);
 
   const handleClosePreview = () => {
     setSelectedContent(null);
