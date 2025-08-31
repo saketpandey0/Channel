@@ -77,6 +77,7 @@ const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             role: user.role || "READER",
         };
         req.session.user = payload;
+        yield req.session.save();
         const accessToken = jsonwebtoken_1.default.sign({ payload }, JWT_SECRET, { expiresIn: '1h' });
         const refreshToken = jsonwebtoken_1.default.sign({ payload }, JWT_SECRET, { expiresIn: consts_1.COOKIE_MAX_AGE });
         res
@@ -121,6 +122,8 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             role: user.role || "READER",
         };
         req.session.user = payload;
+        yield req.session.save();
+        console.log("req.session.user", req.session.user);
         const accessToken = jsonwebtoken_1.default.sign({ payload }, JWT_SECRET, { expiresIn: '1h' });
         const refreshToken = jsonwebtoken_1.default.sign({ payload }, JWT_SECRET, { expiresIn: consts_1.COOKIE_MAX_AGE });
         res
@@ -167,23 +170,60 @@ const getCurrentUser = (req, res) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.getCurrentUser = getCurrentUser;
 const getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     console.log("function called");
-    const username = req.params;
-    console.log("Fetching profile for username:", username);
+    const { username } = req.params;
+    const viewerId = ((_a = req.session.user) === null || _a === void 0 ? void 0 : _a.userId) || ((_b = req.user) === null || _b === void 0 ? void 0 : _b.userId);
     try {
         const user = yield db_1.default.user.findUnique({
-            where: { username: username.username },
+            where: { username },
             select: {
                 id: true,
                 name: true,
+                username: true,
                 bio: true,
-                avatar: true
+                avatar: true,
+                isVerified: true
             }
         });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-        return res.status(200).json({ user });
+        const [followersCount, followingCount, postsCount] = yield Promise.all([
+            db_1.default.follow.count({ where: { followingId: user.id } }),
+            db_1.default.follow.count({ where: { followerId: user.id } }),
+            db_1.default.story.count({ where: { authorId: user.id } })
+        ]);
+        let isFollowing = false;
+        if (viewerId) {
+            const relation = yield db_1.default.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: viewerId,
+                        followingId: user.id
+                    }
+                }
+            });
+            isFollowing = !!relation;
+        }
+        return res.status(200).json({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            avatar: user.avatar,
+            bio: user.bio,
+            isVerified: user.isVerified,
+            stats: {
+                followers: followersCount,
+                following: followingCount,
+                posts: postsCount
+            },
+            viewerContext: {
+                isFollowing,
+                canMessage: viewerId && viewerId !== user.id,
+                canReport: viewerId && viewerId !== user.id
+            }
+        });
     }
     catch (err) {
         console.error(err);

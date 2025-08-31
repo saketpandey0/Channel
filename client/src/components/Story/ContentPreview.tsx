@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { X, MessageCircle, Bookmark, Share, Clock } from "lucide-react";
 import type { Story } from "../../types/story";
 import { ClapButton } from "./ClapButton";
+import { useNavigate } from "react-router-dom";
 
 interface ContentPreviewProps {
   story: Story;
@@ -17,7 +18,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   isOpen,
   onClose,
 }) => {
-
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (isOpen) {
@@ -52,6 +53,11 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const handleNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/${story.author.username}/about`);
   };
 
   const handleContentScroll = (e: React.UIEvent) => {
@@ -135,7 +141,9 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             </div>
           </div>
 
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-6 flex items-center gap-3 cursor-pointer"
+            onClick={handleNavigate}
+          >
             <img
               src={story.author.avatar || "/placeholder.svg"}
               alt={story.author.name}

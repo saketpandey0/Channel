@@ -18,7 +18,7 @@ export const useProfileContext = (profileUsername: string) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      try {
+      try { 
         const profile = await fetchUserProfile(profileUsername);
         console.log("Fetched profile: ", profile);
         setProfileUser(profile);

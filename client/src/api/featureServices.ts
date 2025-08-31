@@ -113,13 +113,20 @@ export const getBatchCommentClapData = async (storyId: string, commentId: string
 }
 
 export const toggleUserFollow = async (userId: string) => {
-    const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/${userId}/follow`, null, {
-        withCredentials: true,
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    });
-    return reponse.data;
+    try{
+        console.log("calling toggleUserFollow");
+        const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/${userId}/follow`, {
+            withCredentials: true,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        console.log("reponse.data", reponse.data);
+        return reponse.data;
+    }catch(error){
+        console.error("Error fetching follow data", error);
+        throw error;
+    }
 }
 
 export const getUserFollowData = async (userId: string) => {

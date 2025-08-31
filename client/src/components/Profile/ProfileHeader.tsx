@@ -1,6 +1,7 @@
 import { Avatar } from "../Shad";
 import { motion } from "motion/react";
 import type { ProfileUser, ProfileViewContext, ProfileTabConfig } from "../../types/profile";
+import { GiFeather } from "react-icons/gi";
 
 interface ProfileHeaderProps {
   user: ProfileUser;
@@ -22,14 +23,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="block md:hidden">
-            <Avatar className="bg-black h-18 w-18 pb-4"></Avatar>
+            <Avatar className="border border-gray-600 size-18">
+              <img
+                src={user.avatar}
+                // alt={user.name}
+                className="size-18 rounded-full object-cover"
+              />  
+            </Avatar>   
           </div>
           <h1 className="text-4xl font-bold text-gray-900">
             {user.name}
-            {/* SAKET PANDEY */}
           </h1>
           {user.isVerified && (
-            <span className="text-2xl text-blue-500">✓</span>
+            <span className="text-2xl text-blue-500">
+              <GiFeather />
+            </span>
           )}
         </div>
         {viewContext.isOwner ? (

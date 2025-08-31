@@ -1,29 +1,56 @@
 import type { FC } from "react";
 import type { ToolbarProps } from "./types";
 import ToolbarButton from "./ToolbarButton";
-  import {
-    Bold,
-    Italic,
-    Underline,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    Link,
-    Image,
-    Video,
-    Mic,
-    MicOff,
-    Undo,
-    Redo,
-    List,
-    ListOrdered,
-    Quote,
-    Code,
-    Youtube,
+import {
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Link,
+  Image,
+  Video,
+  Mic,
+  MicOff,
+  Undo,
+  Redo,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Youtube,
 } from "lucide-react";
 
+interface ToolbarPropsExtended extends ToolbarProps {
+  insertList: (ordered: boolean) => void;
+  insertBlockquote: () => void;
+  insertCodeBlock: () => void;
+  handleLinkClick: () => void;
+  handleYouTubeClick: () => void;
+  toggleRecording: () => void;
+  isRecording: boolean;
+  isUploading: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  videoInputRef: React.RefObject<HTMLInputElement>;
+}
 
-const Toolbar: FC<ToolbarProps> = ({execCommand, isCommandActive, handleUndo, handleRedo}) => {
+const Toolbar: FC<ToolbarPropsExtended> = ({
+  execCommand,
+  isCommandActive,
+  handleUndo,
+  handleRedo,
+  insertList,
+  insertBlockquote,
+  insertCodeBlock,
+  handleLinkClick,
+  handleYouTubeClick,
+  toggleRecording,
+  isRecording,
+  isUploading,
+  fileInputRef,
+  videoInputRef,
+}) => {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <ToolbarButton onClick={handleUndo} title="Undo">
@@ -140,3 +167,5 @@ const Toolbar: FC<ToolbarProps> = ({execCommand, isCommandActive, handleUndo, ha
     </div>
   );
 };
+
+export default Toolbar;

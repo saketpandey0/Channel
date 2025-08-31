@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStoryVersions = exports.getStoriesStats = exports.getUserPublishedStories = exports.getUserDrafts = exports.unpublishStory = exports.publishStory = exports.getTrendingStories = exports.getFeed = exports.deleteStory = exports.updateStory = exports.getStories = exports.getStory = exports.createStory = void 0;
+exports.restoreStoryVersion = exports.getStoryVersions = exports.getStoriesStats = exports.getUserPublishedStories = exports.getUserDrafts = exports.unpublishStory = exports.publishStory = exports.getTrendingStories = exports.getFeed = exports.deleteStory = exports.updateStory = exports.getStories = exports.getStory = exports.createStory = void 0;
 const storyValidation_1 = __importDefault(require("../validators/storyValidation"));
 const db_1 = __importDefault(require("../db"));
 const generateSlug_1 = require("../utils/generateSlug");
@@ -29,12 +29,12 @@ const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!success) {
             return res.status(400).json({ error: "Invalid story data", issues: data });
         }
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
         const slug = (0, generateSlug_1.generateSlug)(title);
         const readTime = (0, calcReadTime_1.calcReadTime)(content);
         const wordCount = content.split(/\s+/).length;
         const plainTextContent = content.replace(/<[^>]+>/g, '');
-        const newBlogPost = yield db_1.default.story.create({
+        const newStory = yield db_1.default.story.create({
             data: {
                 slug,
                 title,
@@ -53,6 +53,7 @@ const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 status: 'DRAFT',
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -82,15 +83,26 @@ const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 });
                 yield db_1.default.storyTag.create({
                     data: {
-                        storyId: newBlogPost.id,
+                        storyId: newStory.id,
                         tagId: tag.id
+                    }
+                });
+            }
+        }
+        if (mediaIds && mediaIds.length > 0) {
+            for (const [index, mediaId] of mediaIds.entries()) {
+                yield db_1.default.storyMedia.create({
+                    data: {
+                        storyId: newStory.id,
+                        mediaId,
+                        order: index
                     }
                 });
             }
         }
         yield redisCache_1.cache.evictPattern(`stories:author:${userId}:*`);
         yield redisCache_1.cache.evictPattern(`user:${userId}:drafts:*`);
-        res.status(201).json(newBlogPost);
+        res.status(201).json(newStory);
     }
     catch (error) {
         console.error("Error creating blog post:", error);
@@ -110,6 +122,7 @@ const getStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const story = yield db_1.default.story.findUnique({
             where: { id },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -239,6 +252,7 @@ const getStories = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 author: { select: { id: true, username: true, name: true, avatar: true } },
                 publication: { select: { id: true, name: true, slug: true, logo: true } },
                 tags: { include: { tag: { select: { id: true, name: true, slug: true } } } },
+                media: true,
                 _count: { select: { claps: true, comments: true, bookmarks: true } }
             },
             orderBy: { publishedAt: 'desc' },
@@ -289,7 +303,7 @@ const updateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!success) {
             return res.status(400).json({ error: "Invalid story data" });
         }
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
         const slug = title ? (0, generateSlug_1.generateSlug)(title) : story.slug;
         const readTime = content ? (0, calcReadTime_1.calcReadTime)(content) : story.readTime;
         const wordCount = content ? content.split(/\s+/).length : story.wordCount;
@@ -333,7 +347,8 @@ const updateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                     include: {
                         tag: true
                     }
-                }
+                },
+                media: true
             }
         });
         if (tags) {
@@ -357,6 +372,17 @@ const updateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                     data: {
                         storyId: id,
                         tagId: tag.id
+                    }
+                });
+            }
+        }
+        if (mediaIds && mediaIds.length > 0) {
+            for (const [index, mediaId] of mediaIds.entries()) {
+                yield db_1.default.storyMedia.create({
+                    data: {
+                        storyId: id,
+                        mediaId,
+                        order: index
                     }
                 });
             }
@@ -442,6 +468,7 @@ const getFeed = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 }
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -519,6 +546,7 @@ const getTrendingStories = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 }
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -600,6 +628,7 @@ const publishStory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 publishedAt: new Date(),
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -713,7 +742,8 @@ const getUserDrafts = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                         name: true,
                         slug: true,
                     }
-                }
+                },
+                media: true
             },
             orderBy: { updatedAt: 'desc' },
         });
@@ -762,6 +792,7 @@ const getUserPublishedStories = (req, res) => __awaiter(void 0, void 0, void 0, 
                         slug: true,
                     }
                 },
+                media: true,
                 _count: {
                     select: {
                         claps: true,
@@ -873,3 +904,53 @@ const getStoryVersions = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getStoryVersions = getStoryVersions;
+const restoreStoryVersion = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    try {
+        const { id, versionId } = req.params;
+        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId) || 'anonymous';
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Accesss" });
+        }
+        const story = yield db_1.default.story.findUnique({
+            where: { id },
+        });
+        if (!story) {
+            return res.status(404).json({ error: "Story not found" });
+        }
+        if (story.authorId !== userId) {
+            return res.status(401).json({ error: "Unauthorized Accesss" });
+        }
+        const version = yield db_1.default.storyVersion.findUnique({
+            where: { id: versionId }
+        });
+        if (!version) {
+            return res.status(404).json({ error: "Version not found" });
+        }
+        if (version.storyId !== id) {
+            return res.status(401).json({ error: "Unauthorized Accesss" });
+        }
+        const updatedStory = yield db_1.default.story.update({
+            where: { id },
+            data: {
+                title: version.title,
+                content: version.content,
+                status: 'DRAFT',
+                publishedAt: null,
+                updatedAt: new Date(),
+            }
+        });
+        yield redisCache_1.cache.evictPattern(`story:${id}:*`);
+        yield redisCache_1.cache.evictPattern(`stories:*`);
+        yield redisCache_1.cache.evictPattern(`user:${userId}:*`);
+        if (story.publicationId) {
+            yield redisCache_1.cache.evictPattern(`stories:*publication:${story.publicationId}*`);
+        }
+        res.status(200).json({ story: updatedStory });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+exports.restoreStoryVersion = restoreStoryVersion;

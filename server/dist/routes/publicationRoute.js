@@ -8,7 +8,7 @@ router.get('/:id', publicationController_1.getPublication);
 router.post('/create', publicationController_1.createPublication);
 router.delete('/delete/:id', publicationController_1.deletePublication);
 router.put('/update/:id', publicationController_1.updatePublication);
-router.get('/stories/:id', publicationController_1.getPublicationStories);
+router.get('/:id/stories', publicationController_1.getPublicationStories);
 router.post('/submit/:id', publicationController_1.submitStoryToPublication);
 router.put('/update/:id/submission/:storyId', publicationController_1.updateSubmissionStatus);
 router.get('/writers/:id', publicationController_1.getPublicationWriters);

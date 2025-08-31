@@ -76,6 +76,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
     };
 
     req.session.user = payload;
+    await req.session.save();
     const accessToken = jwt.sign({ payload }, JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ payload }, JWT_SECRET, { expiresIn: COOKIE_MAX_AGE });
 
@@ -127,6 +128,8 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
     };
 
     req.session.user = payload;
+    await req.session.save();
+    console.log("req.session.user", req.session.user);
     const accessToken = jwt.sign({ payload }, JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ payload }, JWT_SECRET, { expiresIn: COOKIE_MAX_AGE });
 
@@ -175,28 +178,69 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<any> 
 
 
 export const getUserProfile = async (req: Request, res: Response): Promise<any> => {
-  console.log("function called")
-  const username = req.params;
-  console.log("Fetching profile for username:", username);
+  console.log("function called");
+  const { username } = req.params;  
+  const viewerId = req.session.user?.userId || req.user?.userId;
+
   try {
     const user = await prisma.user.findUnique({
-      where: { username: username.username },
+      where: { username },
       select: {
         id: true,
         name: true,
+        username: true,
         bio: true,
-        avatar: true
+        avatar: true,
+        isVerified: true
       }
     });
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    return res.status(200).json({ user });
+
+    const [followersCount, followingCount, postsCount] = await Promise.all([
+      prisma.follow.count({ where: { followingId: user.id } }),  
+      prisma.follow.count({ where: { followerId: user.id } }),   
+      prisma.story.count({ where: { authorId: user.id } }) 
+    ]);
+
+    let isFollowing = false;
+    if (viewerId) {
+      const relation = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: viewerId,
+            followingId: user.id
+          }
+        }
+      });
+      isFollowing = !!relation;
+    }
+
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      isVerified: user.isVerified,
+      stats: {
+        followers: followersCount,
+        following: followingCount,
+        posts: postsCount
+      },
+      viewerContext: {
+        isFollowing,
+        canMessage: viewerId && viewerId !== user.id, 
+        canReport: viewerId && viewerId !== user.id   
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
 
 
 export const updateUserProfile = async (req: Request, res: Response): Promise<any> => {

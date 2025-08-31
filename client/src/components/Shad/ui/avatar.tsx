@@ -1,4 +1,3 @@
-'use client';
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import type { ComponentProps } from 'react';
@@ -32,7 +31,6 @@ const AvatarFallback = ({
   />
 );
 
-// million-ignore
 function DefaultAvatar(props: ComponentProps<'svg'>) {
   return (
     <svg
