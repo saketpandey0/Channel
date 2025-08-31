@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAdminUsers, updateUserStatus, deleteUserAccount, getAdminStories, moderateStory, removeStory, getAdminPublications, moderatePublication, getAdminReports, resolveReport, getAdminAnalytics, getSystemHealth, getAdminDashboard, getUserActivityLogs, bulkActionStories, validateStoryModeration, validateUserUpdate } from "../controller/adminController";
+import { getCurrentAdmin ,getAdminUsers, updateUserStatus, deleteUserAccount, getAdminStories, moderateStory, removeStory, getAdminPublications, moderatePublication, getAdminReports, resolveReport, getAdminAnalytics, getSystemHealth, getAdminDashboard, getUserActivityLogs, bulkActionStories, validateStoryModeration, validateUserUpdate, validatePublicationUpdate } from "../controller/adminController";
 
 
 
@@ -7,6 +7,8 @@ const router = Router();
 
 
 
+
+router.get('/me', ...getCurrentAdmin);
 router.get('/dashboard', ...getAdminDashboard);
 router.get('/users', ...getAdminUsers); 
 router.put('/users/:id/status', [...validateUserUpdate, ...updateUserStatus]);
@@ -19,7 +21,7 @@ router.delete('/stories/:id', ...removeStory);
 router.post('/stories/bulk-action', ...bulkActionStories);
 
 router.get('/publications', ...getAdminPublications);   
-router.put('/publications/:id/status', ...moderatePublication);
+router.put('/publications/:id/status', [...validatePublicationUpdate, ...moderatePublication]);
 
 router.get('/reports', getAdminReports);
 router.put('/reports/:id/resolve', ...resolveReport);

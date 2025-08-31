@@ -115,7 +115,7 @@ export const getBatchCommentClapData = async (storyId: string, commentId: string
 export const toggleUserFollow = async (userId: string) => {
     try{
         console.log("calling toggleUserFollow");
-        const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/${userId}/follow`, {
+        const reponse = await axios.post(`${BACKEND_URL}/api/feature/user/${userId}/follow`, {}, {
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',

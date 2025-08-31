@@ -13,6 +13,43 @@ type EngagementStats = {
 };
 
 
+
+export const getCurrentAdmin = [
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const adminId = req.user?.userId || req.session.user?.userId;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          role: true,
+          avatar: true,
+          isVerified: true,
+        }
+      });
+
+      if (!admin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      res.status(200).json(admin);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+];
+
+
 export const getAdminUsers: RequestHandler[] = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -226,7 +263,7 @@ export const moderateStory = [
   async (req: Request, res: Response): Promise<any> => {
     try {
       const { id } = req.params;
-      const { status, reason } = req.body;
+      const { status } = req.body;
 
       if (!["PUBLISHED", "ARCHIVED", "DRAFT"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
@@ -278,60 +315,61 @@ export const removeStory = [
 ];
 
 export const getAdminPublications = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
-            const skip = (page - 1) * limit;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+      const search = req.query.search as string;
+      const status = req.query.status as string;
 
-            const publications = await prisma.publication.findMany({
-                include: {
-                    owner: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            avatar: true,
-                        }
-                    },
-                    _count: {
-                        select: {
-                            stories: true,
-                            subscribers: true,
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            });
+      const where: any = {};
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ];
+      }
+      if (status) where.status = status;
 
-            const totalPublications = await prisma.publication.count();
+      const publications = await prisma.publication.findMany({
+        where,
+        include: {
+          owner: {
+            select: { id: true, username: true, name: true, avatar: true },
+          },
+          _count: { select: { stories: true, subscribers: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      });
 
-            res.status(200).json({
-                publications,
-                pagination: {
-                    page,
-                    limit,
-                    total: totalPublications,
-                    totalPages: Math.ceil(totalPublications / limit),
-                }
-            });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
-        }
+      const totalPublications = await prisma.publication.count({ where });
+
+      res.status(200).json({
+        publications,
+        pagination: {
+          page,
+          limit,
+          total: totalPublications,
+          totalPages: Math.ceil(totalPublications / limit),
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  },
 ];
-
 
 export const moderatePublication = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
         try {
             const { id } = req.params;
-            const { isPublic, reason } = req.body;
+            const { isPublic } = req.body;
 
             const updatedPublication = await prisma.publication.update({
                 where: { id },
@@ -710,7 +748,6 @@ export const getAdminDashboard = [
     }
 ];
 
-
 export const bulkActionStories = [
     requireAdmin,
     async (req: Request, res: Response): Promise<any> => {
@@ -761,7 +798,6 @@ export const bulkActionStories = [
         }
     }
 ];
-
 
 export const getUserActivityLogs = [
     requireAdmin,
@@ -1082,7 +1118,6 @@ export const getAdvancedAnalytics = [
         }
       };
 
-      // Cache for 1 hour
       await cache.set("admin", cacheKey, analytics, 3600);
 
       res.status(200).json({ analytics });
@@ -1093,7 +1128,6 @@ export const getAdvancedAnalytics = [
   }
 ];
 
-// Content moderation queue
 export const getModerationQueue = [
   requireAdminWithLogging,
   async (req: Request, res: Response): Promise<any> => {
@@ -1570,6 +1604,20 @@ export const validateUserUpdate = [
 
 export const validateStoryModeration = [
     param('id').isUUID().withMessage('Valid story ID required'),
+    body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
+    body('reason').optional().isLength({min:10, max:500}).withMessage('Reason must be 10-500 characters'),
+    (req: Request, res: Response, next: NextFunction) => {
+        const error = validationResult(req);
+        if(!error.isEmpty()){
+            return res.status(400).json({ errors: error.array() });
+        }
+        next();
+    }
+]
+
+
+export const validatePublicationUpdate = [
+    param('id').isUUID().withMessage('Valid publication ID required'),
     body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
     body('reason').optional().isLength({min:10, max:500}).withMessage('Reason must be 10-500 characters'),
     (req: Request, res: Response, next: NextFunction) => {

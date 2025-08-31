@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const featuresController_1 = require("../controller/featuresController");
+const middleware_1 = require("../middlewares/middleware");
 const router = (0, express_1.Router)();
+router.use(middleware_1.authenticate);
 router.post("/story/:id/clap", featuresController_1.toggleClapStory);
 router.get("/story/:id/clap", featuresController_1.getStoryClapData);
 router.post("/story/metadata", featuresController_1.getBatchStoryMetaData);

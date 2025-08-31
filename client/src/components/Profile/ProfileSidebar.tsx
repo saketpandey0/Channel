@@ -15,7 +15,7 @@ interface ProfileSidebarProps {
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEditProfile }) => {
   const { isFollowing, toggleFollow, isLoading, data } = useFollowUser(user.id, viewContext.isFollowing);
   const editRef = useRef<HTMLButtonElement>(null);
-  console.log("sidebar", data)
+  console.log("sidebar", data.followersCount);
 
   const footerItems = [
     { name: "Help", pageLink: "/help" },
@@ -35,7 +35,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
 
   const formatCount = (count: number): string => {
     if (typeof count === 'undefined') {
-      return '';
+      return '0';
     }
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
@@ -59,7 +59,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
         <div className='flex flex-col justify-center pt-2 pl-4'>    
           <span className='text-base font-semibold text-black'>{user.name}</span>
           <span className='cursor-pointer text-base font-semibold text-gray-700 hover:text-black'>
-            {formatCount(data.followerCount)} followers
+            {data.followersCount ? formatCount(data.followersCount) : '0'} followers
           </span>
           {user.location && (
             <span className='text-sm text-gray-600'>{user.location}</span>

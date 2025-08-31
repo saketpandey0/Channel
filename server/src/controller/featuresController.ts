@@ -650,6 +650,7 @@ export const toggleUserFollow = async (req: Request, res: Response): Promise<any
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+
         console.log("userId", userId, id);
         console.log("toogleUserFollow", req.session?.user);
         console.log("toogleUserFollow 2", req.user);
@@ -1212,7 +1213,6 @@ export const contentSearch = async (req: Request, res: Response): Promise<any> =
             })
         ]);
 
-        // Transform the data to match the expected format
         const transformedResults = {
             stories: stories.map(story => ({
                 id: story.id,

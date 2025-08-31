@@ -27,17 +27,34 @@ app.use((0, express_session_1.default)({
     secret: process.env.COOKIE_SECRET || 'your_secret_key',
     resave: false,
     saveUninitialized: false,
+    name: 'connect.sid',
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: false,
         maxAge: parseInt(process.env.COOKIE_MAX_AGE || '604800000'),
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    }
+    },
+    rolling: true,
 }));
+app.use((req, res, next) => {
+    var _a;
+    console.log('=== Session Debug Info ===');
+    console.log('Session ID:', req.sessionID);
+    console.log('Session exists:', !!req.session);
+    console.log('Session user:', (_a = req.session) === null || _a === void 0 ? void 0 : _a.user);
+    console.log('Cookies:', req.cookies);
+    console.log('URL:', req.method, req.path);
+    console.log('========================');
+    next();
+});
 (0, passport_1.initPassport)();
 app.use(passport_2.default.initialize());
 app.use(passport_2.default.session());
 app.use('/api', routes_1.default);
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

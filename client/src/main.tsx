@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom'
 
 
 
-const hiddenNavbarRoutes = ['/editor'];
+const hiddenNavbarRoutes = ['/editor', '/admin'];
 
 function Layout() {
   const location = useLocation();
