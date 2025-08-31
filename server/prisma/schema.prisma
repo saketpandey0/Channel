@@ -39,6 +39,13 @@ model User {
   updatedAt    DateTime @updatedAt
   lastActiveAt DateTime @default(now())
 
+  // Enhanced tracking for admin purposes
+  lastLoginAt         DateTime?
+  loginCount          Int       @default(0)
+  failedLoginAttempts Int       @default(0)
+  lastFailedLoginAt   DateTime?
+
+  // Existing relationships
   refreshTokens RefreshToken[]
   stories       Story[]        @relation("AuthorStories")
   drafts        Story[]        @relation("DraftStories")
@@ -64,6 +71,20 @@ model User {
   reportedContent Report[] @relation("ReportedUser")
 
   media Media[]
+
+  // New admin-related relationships
+  adminLogs                AdminLog[]              @relation("AdminLogs")
+  flagsCreated             ContentFlag[]           @relation("FlaggedBy")
+  flagsResolved            ContentFlag[]           @relation("FlagResolver")
+  userFlags                ContentFlag[]           @relation("UserFlags")
+  siteNotificationsCreated SiteNotification[]      @relation("SiteNotificationCreator")
+  moderationActions        ModerationAction[]      @relation("UserModerationActions")
+  moderatorActions         ModerationAction[]      @relation("ModeratorActions")
+  revokedModerationActions ModerationAction[]      @relation("ModerationRevoker")
+  emailTemplatesCreated    EmailTemplate[]         @relation("EmailTemplateCreator")
+  configUpdates            SystemConfig[]          @relation("ConfigUpdater")
+  apiUsage                 ApiUsage[]              @relation("ApiUsage")
+  moderatedStories         Story[]                 @relation("StoryModerator")
 
   @@map("users")
 }
@@ -127,6 +148,13 @@ model Story {
   updatedAt    DateTime  @updatedAt
   lastViewedAt DateTime?
 
+  // Enhanced admin tracking
+  flags            ContentFlag[] @relation("StoryFlags")
+  moderationNotes  String?       // Internal notes for moderators
+  lastModeratedAt  DateTime?
+  moderatedBy      String?
+  moderator        User?         @relation("StoryModerator", fields: [moderatedBy], references: [id])
+
   tags           StoryTag[]
   comments       Comment[]
   claps          Clap[]
@@ -154,7 +182,7 @@ model StoryVersion {
   @@unique([storyId, version])
   @@map("story_versions")
 }
-
+ 
 model Publication {
   id          String  @id @default(cuid())
   slug        String  @unique
@@ -339,6 +367,12 @@ model Comment {
   clapCount  Int @default(0)
   replyCount Int @default(0)
 
+  // Enhanced admin features
+  flags     ContentFlag[] @relation("CommentFlags")
+  isHidden  Boolean       @default(false)
+  hiddenBy  String?
+  hiddenAt  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -449,6 +483,8 @@ model Media {
   uploader   User         @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
   stories    StoryMedia[]
 
+  createdAt DateTime @default(now())
+
   @@map("media")
 }
 
@@ -463,6 +499,170 @@ model StoryMedia {
   @@unique([storyId, mediaId])
   @@map("article_media")
 }
+
+// =====================================================
+// ADMIN & MODERATION MODELS
+// =====================================================
+
+// Admin activity logging
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("AdminLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  
+  action     String   // Action performed (e.g., "DELETE_USER", "MODERATE_STORY")
+  targetId   String?  // ID of the affected resource
+  targetType String?  // Type of affected resource (USER, STORY, COMMENT, etc.)
+  
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?    // Additional context data
+  
+  createdAt  DateTime @default(now())
+  
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_logs")
+}
+
+// Content flagging system
+model ContentFlag {
+  id       String    @id @default(cuid())
+  storyId  String?
+  story    Story?    @relation("StoryFlags", fields: [storyId], references: [id], onDelete: Cascade)
+  
+  commentId String?
+  comment   Comment? @relation("CommentFlags", fields: [commentId], references: [id], onDelete: Cascade)
+  
+  userId   String?
+  user     User?    @relation("UserFlags", fields: [userId], references: [id], onDelete: Cascade)
+  
+  flaggedBy String
+  flagger   User     @relation("FlaggedBy", fields: [flaggedBy], references: [id])
+  
+  type      FlagType
+  reason    String
+  status    FlagStatus @default(ACTIVE)
+  
+  resolvedBy String?
+  resolver   User?    @relation("FlagResolver", fields: [resolvedBy], references: [id])
+  resolvedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([storyId, status])
+  @@index([commentId, status])
+  @@index([userId, status])
+  @@map("content_flags")
+}
+
+// Enhanced notification system for admin broadcasts
+model SiteNotification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      SiteNotificationType
+  
+  createdBy String
+  creator   User     @relation("SiteNotificationCreator", fields: [createdBy], references: [id])
+  
+  targetRole    UserRole? // If targeting specific role
+  isActive      Boolean   @default(true)
+  expiresAt     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("site_notifications")
+}
+
+// User suspension/ban history
+model ModerationAction {
+  id       String           @id @default(cuid())
+  userId   String
+  user     User             @relation("UserModerationActions", fields: [userId], references: [id], onDelete: Cascade)
+  
+  actionType ModerationActionType
+  reason     String
+  duration   Int?             // Duration in days for temporary actions
+  
+  moderatorId String
+  moderator   User           @relation("ModeratorActions", fields: [moderatorId], references: [id])
+  
+  isActive    Boolean        @default(true)
+  expiresAt   DateTime?
+  
+  createdAt   DateTime       @default(now())
+  revokedAt   DateTime?
+  revokedBy   String?
+  revoker     User?          @relation("ModerationRevoker", fields: [revokedBy], references: [id])
+  
+  @@index([userId, isActive])
+  @@map("moderation_actions")
+}
+
+// Email templates for admin notifications
+model EmailTemplate {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  subject     String
+  htmlBody    String
+  textBody    String?
+  
+  templateType EmailTemplateType
+  isActive     Boolean           @default(true)
+  
+  createdBy   String
+  creator     User              @relation("EmailTemplateCreator", fields: [createdBy], references: [id])
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@map("email_templates")
+}
+
+// System configuration
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+  
+  description String?
+  category    String? // e.g., "moderation", "email", "features"
+  
+  updatedBy String
+  updater   User   @relation("ConfigUpdater", fields: [updatedBy], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("system_config")
+}
+
+// API usage tracking for rate limiting and monitoring
+model ApiUsage {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation("ApiUsage", fields: [userId], references: [id])
+  
+  endpoint  String
+  method    String
+  ipAddress String
+  userAgent String?
+  
+  responseStatus Int
+  responseTime   Int     // in milliseconds
+  
+  createdAt DateTime @default(now())
+  
+  @@index([endpoint, createdAt])
+  @@index([userId, createdAt])
+  @@map("api_usage")
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
 
 enum MediaType {
   IMAGE
@@ -540,4 +740,51 @@ enum ReportStatus {
   UNDER_REVIEW
   RESOLVED
   DISMISSED
+}
+
+enum FlagType {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  COPYRIGHT_VIOLATION
+  HATE_SPEECH
+  MISINFORMATION
+  ADMIN_FLAG
+  AUTO_FLAG
+}
+
+enum FlagStatus {
+  ACTIVE
+  RESOLVED
+  DISMISSED
+  ESCALATED
+}
+
+enum SiteNotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  MAINTENANCE
+  FEATURE
+}
+
+enum ModerationActionType {
+  WARNING
+  TEMPORARY_SUSPENSION
+  PERMANENT_BAN
+  CONTENT_REMOVAL
+  COMMENT_RESTRICTION
+  PUBLISHING_RESTRICTION
+}
+
+enum EmailTemplateType {
+  USER_WELCOME
+  STORY_APPROVED
+  STORY_REJECTED
+  ACCOUNT_SUSPENDED
+  ACCOUNT_BANNED
+  WARNING_NOTICE
+  NEWSLETTER
+  ADMIN_ALERT
 }

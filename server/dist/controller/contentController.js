@@ -15,12 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reportStory = exports.getRelatedStories = exports.getMedia = exports.uploadVideo = exports.uploadImage = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
+const fs_1 = require("fs");
 const promises_1 = __importDefault(require("fs/promises"));
 const db_1 = __importDefault(require("../db"));
 const redisCache_1 = require("../cache/redisCache");
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = file.mimetype.startsWith('image/') ? 'uploads/images/' : 'uploads/videos/';
+        (0, fs_1.mkdirSync)(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
@@ -34,6 +36,7 @@ const upload = (0, multer_1.default)({
         fileSize: 50 * 1024 * 1024, // 50MB limit
     },
     fileFilter: (req, file, cb) => {
+        console.log("uploading file", file.mimetype);
         if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
             cb(null, true);
         }
@@ -47,6 +50,7 @@ exports.uploadImage = [
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c;
         try {
+            console.log("start upload");
             const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
             if (!userId) {
                 return res.status(401).json({ error: "Unauthorized Access" });
@@ -54,6 +58,7 @@ exports.uploadImage = [
             if (!req.file) {
                 return res.status(400).json({ error: "No file uploaded" });
             }
+            console.log("upploading");
             const media = yield db_1.default.media.create({
                 data: {
                     filename: req.file.originalname,
@@ -65,6 +70,7 @@ exports.uploadImage = [
                     type: req.file.mimetype.startsWith('image/') ? 'IMAGE' : 'VIDEO',
                 }
             });
+            console.log("uploaded image", media);
             const image_url = `/api/media/${media.id}`;
             res.status(201).json({
                 id: media.id,

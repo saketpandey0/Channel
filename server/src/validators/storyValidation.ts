@@ -12,6 +12,7 @@ const storyValidation = z.object({
   isPremium: z.boolean().optional(),
   allowComments: z.boolean().optional(),
   allowClaps: z.boolean().optional(),
+  mediaIds: z.array(z.string()).optional(),
 });
 
 

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../shad"
+import { Card, CardContent, CardHeader, CardTitle } from "../Shad"
 
 const websites = [
   { name: "Google", percentage: 85 },

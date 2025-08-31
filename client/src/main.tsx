@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { AppbarClient } from './components/AppbarClient.tsx'
 import { Providers } from './Providers.tsx'
-import { Container } from './components/shad/ui/container.tsx'
+import { Container } from './components/Shad/ui/container.tsx'
 import { Appbar } from './components/Appbar.tsx'
 import { useLocation } from 'react-router-dom'
 

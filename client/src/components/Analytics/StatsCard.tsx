@@ -1,4 +1,4 @@
-import { Card, CardContent } from "../shad"
+import { Card, CardContent } from "../Shad"
 import { TrendingUp, TrendingDown } from "lucide-react"
 
 const stats = [

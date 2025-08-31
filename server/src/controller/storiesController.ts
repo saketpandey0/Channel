@@ -19,12 +19,12 @@ export const createStory = async (req: Request, res: Response): Promise<any> => 
             return res.status(400).json({ error: "Invalid story data", issues: data });
         }
 
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
         const slug = generateSlug(title);
         const readTime = calcReadTime(content);
         const wordCount = content.split(/\s+/).length;
         const plainTextContent = content.replace(/<[^>]+>/g, '');
-        const newBlogPost = await prisma.story.create({
+        const newStory = await prisma.story.create({
             data: {
                 slug,
                 title,
@@ -43,6 +43,7 @@ export const createStory = async (req: Request, res: Response): Promise<any> => 
                 status: 'DRAFT',
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -73,17 +74,30 @@ export const createStory = async (req: Request, res: Response): Promise<any> => 
                 })
                 await prisma.storyTag.create({
                     data: {
-                        storyId: newBlogPost.id,
+                        storyId: newStory.id,
                         tagId: tag.id
                     }
                 })
             }
         }
 
+        if (mediaIds && mediaIds.length > 0) {
+            for (const [index, mediaId] of mediaIds.entries()) {
+                await prisma.storyMedia.create({
+                data: {
+                    storyId: newStory.id,
+                    mediaId,
+                    order: index
+                }
+                });
+            }
+        }
+
+
         await cache.evictPattern(`stories:author:${userId}:*`);
         await cache.evictPattern(`user:${userId}:drafts:*`);
 
-        res.status(201).json(newBlogPost);
+        res.status(201).json(newStory);
     } catch (error) {
         console.error("Error creating blog post:", error);
         res.status(500).json({ error: "Internal server error" });
@@ -104,6 +118,7 @@ export const getStory = async (req: Request, res: Response): Promise<any> => {
         const story = await prisma.story.findUnique({
             where: { id },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -180,7 +195,6 @@ export const getStory = async (req: Request, res: Response): Promise<any> => {
                 }
             }).catch(err => console.error('Error updating reading history:', err));
         }
-
         res.status(200).json(story);
     } catch (err) {
         console.error(err);
@@ -248,6 +262,7 @@ export const getStories = async (req: Request, res: Response): Promise<any> => {
         author: { select: { id: true, username: true, name: true, avatar: true } },
         publication: { select: { id: true, name: true, slug: true, logo: true } },
         tags: { include: { tag: { select: { id: true, name: true, slug: true } } } },
+        media: true,
         _count: { select: { claps: true, comments: true, bookmarks: true } }
       },
       orderBy: { publishedAt: 'desc' },
@@ -280,6 +295,7 @@ export const getStories = async (req: Request, res: Response): Promise<any> => {
 export const updateStory = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
+
         const userId = req.session?.user?.userId || req.user?.userId ;
 
         if (!userId) {
@@ -307,7 +323,7 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
             return res.status(400).json({ error: "Invalid story data" });
         }
 
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
 
         const slug = title ? generateSlug(title) : story.slug;
         const readTime = content ? calcReadTime(content) : story.readTime;
@@ -354,7 +370,8 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
                     include: {
                         tag: true
                     }
-                }
+                },
+                media: true
             }
         });
         
@@ -381,6 +398,18 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
                         tagId: tag.id
                     }
                 })
+            }
+        }
+
+        if (mediaIds && mediaIds.length > 0) {
+            for (const [index, mediaId] of mediaIds.entries()) {
+                await prisma.storyMedia.create({
+                data: {
+                    storyId: id,
+                    mediaId,
+                    order: index
+                }
+                });
             }
         }
 
@@ -471,6 +500,7 @@ export const getFeed = async (req: Request, res: Response): Promise<any> => {
                 }
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -553,6 +583,7 @@ export const getTrendingStories = async (req: Request, res: Response): Promise<a
                 }
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -642,6 +673,7 @@ export const publishStory = async (req: Request, res: Response): Promise<any> =>
                 publishedAt: new Date(),
             },
             include: {
+                media: true,
                 author: {
                     select: {
                         id: true,
@@ -765,7 +797,8 @@ export const getUserDrafts = async (req: Request, res: Response): Promise<any> =
                         name: true,
                         slug: true,
                     }
-                }
+                },
+                media: true
             },
             orderBy: { updatedAt: 'desc' },
         });
@@ -819,6 +852,7 @@ export const getUserPublishedStories = async (req: Request, res: Response): Prom
                         slug: true,
                     }
                 },
+                media: true,
                 _count: {
                     select: {
                         claps: true,
@@ -937,6 +971,61 @@ export const getStoryVersions = async (req: Request, res: Response): Promise<any
 
         res.status(200).json(result);
     }catch(err){
+        console.error(err);
+        res.status(500).json({error: "Internal server error"});
+    }
+}
+
+
+export const restoreStoryVersion = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id, versionId } = req.params;
+        const userId = req.session?.user?.userId || req.user?.userId || 'anonymous' ;
+
+        if(!userId){
+            return res.status(401).json({error: "Unauthorized Accesss"});
+        }
+
+        const story = await prisma.story.findUnique({
+            where: {id},
+        })
+        if(!story){
+            return res.status(404).json({error: "Story not found"});
+        }
+        if(story.authorId !== userId){
+            return res.status(401).json({error: "Unauthorized Accesss"});
+        }
+
+        const version = await prisma.storyVersion.findUnique({
+            where: {id: versionId}
+        })
+        if(!version){
+            return res.status(404).json({error: "Version not found"});
+        }   
+        if(version.storyId !== id){
+            return res.status(401).json({error: "Unauthorized Accesss"});
+        }
+
+        const updatedStory = await prisma.story.update({
+            where: {id},
+            data: {
+                title: version.title,
+                content: version.content,
+                status: 'DRAFT',
+                publishedAt: null,
+                updatedAt: new Date(),
+            }
+        });
+
+        await cache.evictPattern(`story:${id}:*`);
+        await cache.evictPattern(`stories:*`);
+        await cache.evictPattern(`user:${userId}:*`);
+        if(story.publicationId){
+            await cache.evictPattern(`stories:*publication:${story.publicationId}*`);
+        }
+
+        res.status(200).json({story: updatedStory});
+    }catch(err: any){
         console.error(err);
         res.status(500).json({error: "Internal server error"});
     }

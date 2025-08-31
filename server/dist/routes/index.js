@@ -26,5 +26,5 @@ router.use("/admin", adminRoute_1.default);
 router.use("/", updatesRoute_1.default);
 router.use("/analytics", anlyticsRoute_1.default);
 router.use("/feature", featuresRoute_1.default);
-router.use("/", contentRoute_1.default);
+router.use("/content", contentRoute_1.default);
 exports.default = router;

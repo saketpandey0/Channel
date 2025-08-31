@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Card } from "../shad";
+import { Card } from "../Shad";
 import { useState } from "react";
 import { Providers } from "./Providers";
 import { EmailAuth } from "./EmailAuth";

@@ -4,7 +4,7 @@ import {
   useMotionValueEvent,
   useScroll,
 } from "motion/react";
-import { ContentSearch } from "./searchContenet/ContentSearch";
+import { ContentSearch } from "./SearchContenet/ContentSearch";
 import { Avatar } from "./Avatar";
 import { useRef, useState, useEffect } from "react";
 import { UserDropdown } from "./UserDropdown";

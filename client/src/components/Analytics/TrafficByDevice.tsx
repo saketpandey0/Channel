@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../shad"
+import { Card, CardContent, CardHeader, CardTitle } from "../Shad"
 import { BarChart, Cell, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts"
 
 const data = [

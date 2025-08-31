@@ -1,5 +1,5 @@
 import { Search, Bell, Star } from "lucide-react"
-import { Button, Input } from "../shad"
+import { Button, Input } from "../Shad"
 import { PiClockCounterClockwiseBold } from "react-icons/pi";
 import { PiSidebar } from "react-icons/pi";
 import { AiOutlineSun } from "react-icons/ai";

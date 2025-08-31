@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { ProfileUser, ProfileViewContext, ProfileTabConfig } from '../types/profile';
-import StoriesTab from '../components/profile/tabs/StoriesTab';
-import NotificationsTab from '../components/profile/tabs/NotificationsTab';
-import AboutTab from '../components/profile/tabs/AboutTab';
-import BookmarksTab from '../components/profile/tabs/BookmarksTab';
+import StoriesTab from '../components/Profile/tabs/StoriesTab';
+import NotificationsTab from '../components/Profile/tabs/NotificationsTab';
+import AboutTab from '../components/Profile/tabs/AboutTab';
+import BookmarksTab from '../components/Profile/tabs/BookmarksTab';
 
 
 export const useProfileTabs = (user: ProfileUser | null, viewContext: ProfileViewContext) => {
