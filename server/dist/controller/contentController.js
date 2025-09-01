@@ -33,7 +33,7 @@ const storage = multer_1.default.diskStorage({
 const upload = (0, multer_1.default)({
     storage,
     limits: {
-        fileSize: 50 * 1024 * 1024, // 50MB limit
+        fileSize: 200 * 1024 * 1024, // 200MB limit
     },
     fileFilter: (req, file, cb) => {
         console.log("uploading file", file.mimetype);
@@ -51,7 +51,7 @@ exports.uploadImage = [
         var _a, _b, _c;
         try {
             console.log("start upload");
-            const { storyId } = req.params;
+            const { id } = req.params;
             const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
             if (!userId) {
                 return res.status(401).json({ error: "Unauthorized Access" });
@@ -73,7 +73,7 @@ exports.uploadImage = [
             });
             const storyMedia = yield db_1.default.storyMedia.create({
                 data: {
-                    storyId,
+                    storyId: id,
                     mediaId: media.id,
                 },
             });
@@ -97,7 +97,7 @@ exports.uploadVideo = [
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c;
         try {
-            const { storyId } = req.params;
+            const { id } = req.params;
             const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
             if (!userId) {
                 return res.status(401).json({ error: "Unauthorized Access" });
@@ -118,7 +118,7 @@ exports.uploadVideo = [
             });
             const storyMedia = yield db_1.default.storyMedia.create({
                 data: {
-                    storyId,
+                    storyId: id,
                     mediaId: media.id,
                 },
             });

@@ -1,3 +1,4 @@
+import { stat } from 'fs';
 import { z } from 'zod';
 
 
@@ -12,6 +13,7 @@ const storyValidation = z.object({
   isPremium: z.boolean().optional(),
   allowComments: z.boolean().optional(),
   allowClaps: z.boolean().optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED"]).optional(),
   mediaIds: z.array(z.string()).optional(),
 });
 

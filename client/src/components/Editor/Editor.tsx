@@ -1,13 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Save, Upload, Settings } from "lucide-react";
 import { uploadImageService, uploadVideoService } from "../../api/contentService";
 import { createStory, updateStory } from "../../api/storyService";
-import type { MediaItem, StoryData } from "./types";
+import type { MediaItem, StoryData, EditorProps } from "./types";
 import Toolbar from "./Toolbar";
-import SettingModal from "./Modals/SettingModal";
 import LinkModal, { getYouTubeEmbedUrl } from "./Modals/LinkModal";
 import YoutubeModal from "./Modals/YoutubeModal";
 import MediaUploads from "./MediaUploads";
+import { Button } from "../Shad";
 import { 
   generateExcerpt, 
   getWordCount, 
@@ -18,14 +17,13 @@ import {
   isCommandActive as utilIsCommandActive
 } from "./utils";
 
-const IntegratedStoryEditor: React.FC = () => {
-  const editorRef = useRef<HTMLDivElement>(null);
+const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
+  const editorRef = useRef<HTMLDivElement>(null!);
   const titleRef = useRef<HTMLInputElement>(null);
   const subtitleRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null!);
+  const videoInputRef = useRef<HTMLInputElement>(null!);
 
-  // Editor state
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [showLinkDialog, setShowLinkDialog] = useState<boolean>(false);
   const [showYouTubeDialog, setShowYouTubeDialog] = useState<boolean>(false);
@@ -37,66 +35,99 @@ const IntegratedStoryEditor: React.FC = () => {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
-  // Story data
-  const [storyData, setStoryData] = useState<StoryData>({
-    title: "",
-    subtitle: "",
-    content: "",
-    excerpt: "",
-    tags: [],
-    isPremium: false,
-    allowComments: true,
-    allowClaps: true,
-    status: "DRAFT",
-  });
-
-  // UI state
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadedMedia, setUploadedMedia] = useState<MediaItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [uploadedMedia, setUploadedMedia] = useState<MediaItem[]>([]);
-  const [tagInput, setTagInput] = useState<string>("");
-  const [saveStatus, setSaveStatus] = useState<
-    "saved" | "saving" | "error" | null
-  >(null);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error" | null>(null);
 
-  // Auto-save functionality
+
   useEffect(() => {
-    const autoSaveInterval = setInterval(async () => {
-      if (storyData.title.trim() || storyData.content.trim()) {
-        await handleSave(true); // Auto-save as draft
-      }
-    }, 30000); // Auto-save every 30 seconds
+    let typingTimer: NodeJS.Timeout;
+    let lastSave = Date.now();
 
-    return () => clearInterval(autoSaveInterval);
-  }, [storyData]);
+    const handleChange = () => {
+      const currentTitle = titleRef.current?.value || "";
+      const currentContent = editorRef.current?.innerHTML || "";
+
+      if (!(currentTitle.trim() || currentContent.trim())) return;
+
+      const currentStoryData: StoryData = {
+        ...story,
+        title: currentTitle,
+        subtitle: subtitleRef.current?.value || "",
+        content: currentContent,
+      };
+
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        saveStory(currentStoryData, true);
+        lastSave = Date.now();
+      }, 2000);
+
+      if (Date.now() - lastSave >= 30000) {
+        saveStory(currentStoryData, true);
+        lastSave = Date.now();
+      }
+    };
+
+    editorRef.current?.addEventListener("input", handleChange);
+
+    return () => {
+      editorRef.current?.removeEventListener("input", handleChange);
+      clearTimeout(typingTimer);
+    };
+  }, [story]);
+
 
   const uploadMedia = async (
     file: File,
-    type: "image" | "video",
+    type: "image" | "video" | "audio",
   ): Promise<MediaItem | null> => {
     try {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append(type, file);
 
-      const data =
-        type === "image"
-          ? uploadImageService(formData)
-          : uploadVideoService(formData);
+      if (!story.id) {
+        const result = await createStory({
+          ...story,
+          status: 'DRAFT',
+        });
+        onUpdate({ ...story, id: result.id });
+      }
+
+      if (!story.id) {
+        throw new Error("Story ID is missing, cannot upload media.");
+      }
+
+      const formData = new FormData();
+      
+      const uploadType = type === "audio" ? "video" : type;
+      console.log("uploadType", uploadType);
+      formData.append(uploadType, file);
+      console.log(formData);
+        const data = type === "image" 
+        ? await uploadImageService(story.id, formData)
+        : await uploadVideoService(story.id, formData);
+
       console.log("Media Data: ", data);
 
-      const result = await data;
-      console.log("Media Result: ", result);
       const mediaItem: MediaItem = {
-        id: result.id,
-        url: result.url,
-        filename: result.filename,
-        size: result.size,
+        id: data.id,
+        url: data.url,
+        filename: data.filename,
+        size: data.size,
         type,
       };
+      console.log("Media Item: ", mediaItem);
 
-      setUploadedMedia((prev) => [...prev, mediaItem]);
+      setUploadedMedia(prev => [...prev, mediaItem]);
+      
+      const currentMediaIds = story.mediaIds || [];
+      onUpdate({ 
+        ...story, 
+        mediaIds: [...currentMediaIds, mediaItem.id] 
+      });
+      
       return mediaItem;
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -107,38 +138,47 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  const saveStory = async (
-    storyData: StoryData,
-    publish: boolean = false,
-  ): Promise<string | null> => {
+  const saveStory = async (storyData: StoryData, isAutoSave: boolean = false): Promise<string | null> => {
     try {
       setSaveStatus("saving");
       setIsSaving(true);
 
-      const payload = {
+      const currentContent = editorRef.current?.innerHTML || "";
+      const currentTitle = titleRef.current?.value || "";
+      const currentSubtitle = subtitleRef.current?.value || "";
+
+      const payload: StoryData = {
         ...storyData,
-        status: publish ? "PUBLISHED" : "DRAFT",
-        content: editorRef.current?.innerHTML || "",
-        excerpt:
-          storyData.excerpt ||
-          generateExcerpt(editorRef.current?.textContent || ""),
+        title: currentTitle,
+        subtitle: currentSubtitle,
+        content: currentContent,
+        status: "DRAFT", 
+        excerpt: storyData.excerpt || generateExcerpt(editorRef.current?.textContent || ""),
+        mediaIds: uploadedMedia.map(media => media.id),
       };
 
-      const result = storyData.id
-        ? await updateStory(storyData.id, payload)
-        : await createStory(payload);
+      let result;
+      if (storyData.id) {
+        result = await updateStory(storyData.id, payload);
+      } else {
+        result = await createStory(payload);
+        onUpdate({ ...payload, id: result.id });
+      }
 
       setSaveStatus("saved");
       setLastSaved(new Date());
-      console.log("Story saved:", result);
-      if (!storyData.id) {
-        setStoryData((prev) => ({ ...prev, id: result.id }));
+      
+      if (!isAutoSave) {
+        console.log("Story saved:", result);
       }
+      
       return result.id;
     } catch (error: any) {
       console.error("Save error:", error);
       setSaveStatus("error");
-      alert(`Failed to save story: ${error.message}`);
+      if (!isAutoSave) {
+        alert(`Failed to save story: ${error.message}`);
+      }
       return null;
     } finally {
       setIsSaving(false);
@@ -153,12 +193,12 @@ const IntegratedStoryEditor: React.FC = () => {
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
 
-      setStoryData((prev) => ({
-        ...prev,
+      onUpdate({
+        ...story,
         content: editorRef.current?.innerHTML || "",
-      }));
+      });
     }
-  }, [history, historyIndex]);
+  }, [history, historyIndex, story, onUpdate]);
 
   const execCommand = useCallback(
     (command: string, value: string | any = null) => {
@@ -177,10 +217,10 @@ const IntegratedStoryEditor: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const mediaItem: MediaItem | null = await uploadMedia(file, 'image');
+    const mediaItem = await uploadMedia(file, 'image');
     if (mediaItem) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
         const img = document.createElement('img');
         img.src = event.target?.result as string;
         img.style.maxWidth = '100%';
@@ -189,6 +229,7 @@ const IntegratedStoryEditor: React.FC = () => {
         img.style.margin = '16px 0';
         img.style.borderRadius = '8px';
         img.alt = 'Uploaded image';
+        img.setAttribute('data-media-id', mediaItem.id);
         
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
@@ -209,7 +250,7 @@ const IntegratedStoryEditor: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const mediaItem: MediaItem | null = await uploadMedia(file, 'video');
+    const mediaItem = await uploadMedia(file, 'video');
     if (mediaItem) {
       const videoContainer = document.createElement("div");
       videoContainer.style.margin = "16px 0";
@@ -270,9 +311,8 @@ const IntegratedStoryEditor: React.FC = () => {
           });
 
           try {
-            const result = await uploadMedia(audioFile, 'video');
+            const result = await uploadMedia(audioFile, 'audio');
             if (result) {
-
               const audioContainer = document.createElement("div");
               audioContainer.style.margin = "16px 0";
               audioContainer.style.padding = "12px";
@@ -327,7 +367,6 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  // Link insertion
   const handleLinkClick = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -350,7 +389,6 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  // YouTube insertion
   const handleYouTubeClick = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -400,7 +438,6 @@ const IntegratedStoryEditor: React.FC = () => {
     setSelectedRange(null);
   };
 
-  // Utility wrapper functions
   const insertList = (ordered: boolean = false) => {
     utilInsertList(ordered, editorRef, saveToHistory);
   };
@@ -413,7 +450,6 @@ const IntegratedStoryEditor: React.FC = () => {
     utilInsertCodeBlock(saveToHistory);
   };
 
-  // Undo/Redo functions
   const handleUndo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
@@ -434,51 +470,42 @@ const IntegratedStoryEditor: React.FC = () => {
     }
   };
 
-  // Tag management
-  const addTag = () => {
-    if (tagInput.trim() && !storyData.tags.includes(tagInput.trim())) {
-      setStoryData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }));
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setStoryData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
-  // Save handlers
-  const handleSave = async (isDraft: boolean = true) => {
-    const currentStoryData = {
-      ...storyData,
+  const handlePublish = async () => {
+    const currentStoryData: StoryData = {
+      ...story,
       title: titleRef.current?.value || "",
       subtitle: subtitleRef.current?.value || "",
       content: editorRef.current?.innerHTML || "",
     };
 
-    await saveStory(currentStoryData, !isDraft);
-  };
-
-  const handlePublish = async () => {
-    if (!storyData.title.trim()) {
-      alert("Please add a title before publishing");
-      return;
+    const savedId = await saveStory(currentStoryData, false);
+    
+    if (savedId) {
+      onNext();
     }
-    await handleSave(false);
   };
 
-  // Initialize editor
+  // content is loaded from server
   useEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && !story.content) {
       editorRef.current.innerHTML = "<p><br></p>";
       saveToHistory();
+    } else if (editorRef.current && story.content) {
+      // Load existing content if editing existing story
+      editorRef.current.innerHTML = story.content;
+      saveToHistory();
     }
-  }, []);
+  }, [story.id]);
+
+  // Set input values when story changes
+  useEffect(() => {
+    if (titleRef.current && story.title !== titleRef.current.value) {
+      titleRef.current.value = story.title;
+    }
+    if (subtitleRef.current && story.subtitle !== subtitleRef.current.value) {
+      subtitleRef.current.value = story.subtitle;
+    }
+  }, [story.title, story.subtitle]);
 
   const handleCopyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -487,51 +514,22 @@ const IntegratedStoryEditor: React.FC = () => {
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-white p-6">
-      {/* Top Action Bar */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => handleSave(true)}
-            disabled={isSaving}
-            className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
-          >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save Draft"}
-          </button>
+        <header className="max-w-7xl mx-auto flex flex-row items-center justify-evenly gap-32 pt-2 px-4">
+            <div className="flex flex-row max-w-4xl items-center gap-4">
+                <span className="text-4xl font-serif font-bold text-shadow-blue-500">Channel</span>
+                <span>Draft</span>
+                <span className="hidden md:block">saket pandey</span>
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  {isSaving ? "Saving..." : "Saved"}
+                </div>
+            </div>
+            <div>
+                <Button variant={"ghost"} size={'sm'} className="bg-green-700/90 text-white rounded-full "
+                  onClick={handlePublish}
+                >Publish</Button>
+            </div>
+        </header>
 
-          <button
-            onClick={handlePublish}
-            disabled={isSaving}
-            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700 disabled:opacity-50"
-          >
-            <Upload size={16} />
-            Publish
-          </button>
-
-          <button
-            onClick={() => setShowSettings(true)}
-            className="flex items-center gap-2 rounded-lg px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
-          >
-            <Settings size={16} />
-            Settings
-          </button>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm text-gray-500">
-          {saveStatus === "saving" && <span>Saving...</span>}
-          {saveStatus === "saved" && (
-            <span className="text-green-600">Saved</span>
-          )}
-          {saveStatus === "error" && (
-            <span className="text-red-600">Save failed</span>
-          )}
-          {lastSaved && (
-            <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-          )}
-        </div>
-      </div>
-
-      {/* Main Toolbar */}
       <div className="sticky top-0 z-10 mb-6 border-b border-gray-200 bg-white p-4">
         <Toolbar
           execCommand={execCommand}
@@ -551,7 +549,6 @@ const IntegratedStoryEditor: React.FC = () => {
         />
       </div>
 
-      {/* Upload Progress */}
       {isUploading && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
@@ -559,7 +556,6 @@ const IntegratedStoryEditor: React.FC = () => {
         </div>
       )}
 
-      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
@@ -575,35 +571,32 @@ const IntegratedStoryEditor: React.FC = () => {
         className="hidden"
       />
 
-      {/* Title */}
       <div className="mb-6">
         <input
           ref={titleRef}
           type="text"
           placeholder="Title"
-          value={storyData.title}
-          onChange={(e) =>
-            setStoryData((prev) => ({ ...prev, title: e.target.value }))
-          }
+          defaultValue={story.title}
+          onChange={(e) => {
+            onUpdate({ ...story, title: e.target.value });
+          }}
           className="w-full border-none bg-transparent text-4xl leading-tight font-bold text-gray-900 placeholder-gray-400 outline-none"
         />
       </div>
 
-      {/* Subtitle */}
       <div className="mb-8">
         <input
           ref={subtitleRef}
           type="text"
           placeholder="Tell your story..."
-          value={storyData.subtitle}
-          onChange={(e) =>
-            setStoryData((prev) => ({ ...prev, subtitle: e.target.value }))
-          }
+          defaultValue={story.subtitle}
+          onChange={(e) => {
+            onUpdate({ ...story, subtitle: e.target.value });
+          }}
           className="w-full border-none bg-transparent text-xl leading-relaxed text-gray-600 placeholder-gray-400 outline-none"
         />
       </div>
 
-      {/* Recording indicator */}
       {isRecording && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <div className="h-3 w-3 animate-pulse rounded-full bg-red-500"></div>
@@ -611,7 +604,6 @@ const IntegratedStoryEditor: React.FC = () => {
         </div>
       )}
 
-      {/* Main Editor */}
       <div className="relative">
         <div
           ref={editorRef}
@@ -665,7 +657,6 @@ const IntegratedStoryEditor: React.FC = () => {
           suppressContentEditableWarning={true}
         />
 
-        {/* Placeholder when empty */}
         {(!editorRef.current?.textContent ||
           editorRef.current?.textContent === "") && (
           <div className="pointer-events-none absolute top-0 left-0 text-lg text-gray-400">
@@ -674,19 +665,6 @@ const IntegratedStoryEditor: React.FC = () => {
         )}
       </div>
 
-      {/* Settings Modal */}
-      <SettingModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        storyData={storyData}
-        onStoryDataChange={setStoryData}
-        tagInput={tagInput}
-        onTagInputChange={setTagInput}
-        onAddTag={addTag}
-        onRemoveTag={removeTag}
-      />
-
-      {/* YouTube Video Dialog */}
       <YoutubeModal
         isOpen={showYouTubeDialog}
         onClose={() => {
@@ -699,7 +677,6 @@ const IntegratedStoryEditor: React.FC = () => {
         onInsert={insertYouTubeVideo}
       />
 
-      {/* Link Dialog */}
       <LinkModal
         isOpen={showLinkDialog}
         onClose={() => {
@@ -712,10 +689,8 @@ const IntegratedStoryEditor: React.FC = () => {
         onInsert={insertLink}
       />
 
-      {/* Uploaded Media Gallery */}
       <MediaUploads uploadedMedia={uploadedMedia} onCopyUrl={handleCopyUrl} />
 
-      {/* Stats and Footer */}
       <div className="mt-8 border-t border-gray-200 pt-4">
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex gap-4">
@@ -735,14 +710,14 @@ const IntegratedStoryEditor: React.FC = () => {
             </span>
             <span
               className={`rounded px-2 py-1 text-xs ${
-                storyData.status === "PUBLISHED"
+                story.status === "PUBLISHED"
                   ? "bg-green-100 text-green-800"
-                  : storyData.status === "DRAFT"
+                  : story.status === "DRAFT"
                     ? "bg-yellow-100 text-yellow-800"
                     : "bg-gray-100 text-gray-800"
               }`}
             >
-              {storyData.status}
+              {story.status}
             </span>
           </div>
         </div>
@@ -751,4 +726,4 @@ const IntegratedStoryEditor: React.FC = () => {
   );
 };
 
-export default IntegratedStoryEditor;
+export default Editor;

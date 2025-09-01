@@ -76,9 +76,29 @@ export const fetchUserProfile = async (username: string) => {
 
 
 export const editProfile = async (userId: string, profile: UserProfile) => {
-  const response = await axios.put(`/api/users/${userId}/profile`, {
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(profile)
-  });
-  if (!response) throw new Error('Failed to edit profile');
-}
+  try {
+    const response = await axios.put(`${BACKEND_URL}/api/auth/update/${userId}/profile`, profile, {
+      headers: { 
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw new Error('Failed to update profile');
+  }
+};
+
+export const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/api/auth/check-username/${encodeURIComponent(username)}`);
+    return response.data.available;
+  } catch (error: any) {
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw new Error('Failed to check username availability');
+  }
+};

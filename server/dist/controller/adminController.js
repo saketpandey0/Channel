@@ -12,11 +12,43 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateStoryModeration = exports.validateUserUpdate = exports.createSiteNotification = exports.exportUserData = exports.getModerationQueue = exports.getAdvancedAnalytics = exports.getAdminLogs = exports.requireAdminWithLogging = exports.getUserActivityLogs = exports.bulkActionStories = exports.getAdminDashboard = exports.getSystemHealth = exports.getAdminAnalytics = exports.resolveReport = exports.getAdminReports = exports.moderatePublication = exports.getAdminPublications = exports.removeStory = exports.moderateStory = exports.getAdminStories = exports.deleteUserAccount = exports.updateUserStatus = exports.getAdminUsers = void 0;
+exports.validatePublicationUpdate = exports.validateStoryModeration = exports.validateUserUpdate = exports.createSiteNotification = exports.exportUserData = exports.getModerationQueue = exports.getAdvancedAnalytics = exports.getAdminLogs = exports.requireAdminWithLogging = exports.getUserActivityLogs = exports.bulkActionStories = exports.getAdminDashboard = exports.getSystemHealth = exports.getAdminAnalytics = exports.resolveReport = exports.getAdminReports = exports.moderatePublication = exports.getAdminPublications = exports.removeStory = exports.moderateStory = exports.getAdminStories = exports.deleteUserAccount = exports.updateUserStatus = exports.getAdminUsers = exports.getCurrentAdmin = void 0;
 const db_1 = __importDefault(require("../db"));
 const redisCache_1 = require("../cache/redisCache");
 const adminMiddleware_1 = require("../middlewares/adminMiddleware");
 const express_validator_1 = require("express-validator");
+exports.getCurrentAdmin = [
+    adminMiddleware_1.requireAdmin,
+    (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
+        try {
+            const adminId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) || ((_b = req.session.user) === null || _b === void 0 ? void 0 : _b.userId);
+            if (!adminId) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+            const admin = yield db_1.default.user.findUnique({
+                where: { id: adminId },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    role: true,
+                    avatar: true,
+                    isVerified: true,
+                }
+            });
+            if (!admin) {
+                return res.status(404).json({ error: "Admin not found" });
+            }
+            res.status(200).json(admin);
+        }
+        catch (error) {
+            console.error(error);
+            res.status(500).json({ error: "Internal server error" });
+        }
+    })
+];
 exports.getAdminUsers = [
     adminMiddleware_1.requireAdmin,
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -211,7 +243,7 @@ exports.moderateStory = [
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { id } = req.params;
-            const { status, reason } = req.body;
+            const { status } = req.body;
             if (!["PUBLISHED", "ARCHIVED", "DRAFT"].includes(status)) {
                 return res.status(400).json({ error: "Invalid status" });
             }
@@ -260,28 +292,30 @@ exports.getAdminPublications = [
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 20;
             const skip = (page - 1) * limit;
+            const search = req.query.search;
+            const status = req.query.status;
+            const where = {};
+            if (search) {
+                where.OR = [
+                    { title: { contains: search, mode: "insensitive" } },
+                    { description: { contains: search, mode: "insensitive" } },
+                ];
+            }
+            if (status)
+                where.status = status;
             const publications = yield db_1.default.publication.findMany({
+                where,
                 include: {
                     owner: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            avatar: true,
-                        }
+                        select: { id: true, username: true, name: true, avatar: true },
                     },
-                    _count: {
-                        select: {
-                            stories: true,
-                            subscribers: true,
-                        }
-                    }
+                    _count: { select: { stories: true, subscribers: true } },
                 },
-                orderBy: { createdAt: 'desc' },
+                orderBy: { createdAt: "desc" },
                 skip,
                 take: limit,
             });
-            const totalPublications = yield db_1.default.publication.count();
+            const totalPublications = yield db_1.default.publication.count({ where });
             res.status(200).json({
                 publications,
                 pagination: {
@@ -289,21 +323,21 @@ exports.getAdminPublications = [
                     limit,
                     total: totalPublications,
                     totalPages: Math.ceil(totalPublications / limit),
-                }
+                },
             });
         }
         catch (error) {
             console.error(error);
             res.status(500).json({ error: "Internal server error" });
         }
-    })
+    }),
 ];
 exports.moderatePublication = [
     adminMiddleware_1.requireAdmin,
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { id } = req.params;
-            const { isPublic, reason } = req.body;
+            const { isPublic } = req.body;
             const updatedPublication = yield db_1.default.publication.update({
                 where: { id },
                 data: { isPublic },
@@ -967,7 +1001,6 @@ exports.getAdvancedAnalytics = [
                     avgReadingProgress: readerRetention.reduce((sum, reader) => sum + (reader._avg.progress || 0), 0) / readerRetention.length || 0,
                 }
             };
-            // Cache for 1 hour
             yield redisCache_1.cache.set("admin", cacheKey, analytics, 3600);
             res.status(200).json({ analytics });
         }
@@ -977,7 +1010,6 @@ exports.getAdvancedAnalytics = [
         }
     })
 ];
-// Content moderation queue
 exports.getModerationQueue = [
     exports.requireAdminWithLogging,
     (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -1406,6 +1438,18 @@ exports.validateUserUpdate = [
 ];
 exports.validateStoryModeration = [
     (0, express_validator_1.param)('id').isUUID().withMessage('Valid story ID required'),
+    (0, express_validator_1.body)('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
+    (0, express_validator_1.body)('reason').optional().isLength({ min: 10, max: 500 }).withMessage('Reason must be 10-500 characters'),
+    (req, res, next) => {
+        const error = (0, express_validator_1.validationResult)(req);
+        if (!error.isEmpty()) {
+            return res.status(400).json({ errors: error.array() });
+        }
+        next();
+    }
+];
+exports.validatePublicationUpdate = [
+    (0, express_validator_1.param)('id').isUUID().withMessage('Valid publication ID required'),
     (0, express_validator_1.body)('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
     (0, express_validator_1.body)('reason').optional().isLength({ min: 10, max: 500 }).withMessage('Reason must be 10-500 characters'),
     (req, res, next) => {

@@ -5,12 +5,14 @@ import {
   useScroll,
 } from "motion/react";
 import { ContentSearch } from "./SearchContenet/ContentSearch";
-import { Avatar } from "./Avatar";
+// import { Avatar } from "./Avatar";
 import { useRef, useState, useEffect } from "react";
 import { UserDropdown } from "./UserDropdown";
 import { SquarePen, BellRing, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ModeToggle } from "./mode-toggle";
+import { useNavigate } from "react-router-dom";
+import { Avatar } from "./Shad";
 
 export const Appbar = () => {
   const { useCurrentUser } = useAuth();
@@ -21,6 +23,7 @@ export const Appbar = () => {
   const [notification, setNotification] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState<boolean>(false);
   const { scrollY } = useScroll();
+  const navigate = useNavigate();
   
   console.log("User:", user);
 
@@ -91,18 +94,28 @@ export const Appbar = () => {
                 </button>
                 <span className="text-xs font-thin">Write</span>
               </Link>
-              <Link
-                to={"/notification"}
-                className="cursor-pointer pt-2 text-gray-700 hover:text-black"
+              <button
+                onClick={()=>navigate(`/${user.username}/notifications`)}
+                className="cursor-pointer text-gray-700 hover:text-black"
               >
                 {notification ? <BellRing /> : <Bell />}
-              </Link>
+              </button>
               <button
                 ref={avatarRef}
                 onClick={() => setIsUserDropdown((prev) => !prev)}
                 className="cursor-pointer "
               >
-                <Avatar />
+                <Avatar className="border border-blue-600 size-10 flex items-center justify-center bg-gray-200 text-blue-600 font-semibold">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="size-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span>{user.name.charAt(0).toUpperCase()}</span>
+                  )}
+                </Avatar>
               </button>
             </div>
           )}

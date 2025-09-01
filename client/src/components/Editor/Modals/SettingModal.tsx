@@ -38,7 +38,6 @@ const SettingModal: React.FC<SettingModalProps> = ({
           </button>
         </div>
 
-        {/* Tags */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-gray-700">
             Tags
@@ -77,7 +76,6 @@ const SettingModal: React.FC<SettingModalProps> = ({
           </div>
         </div>
 
-        {/* Premium Settings */}
         <div className="mb-6">
           <label className="mb-2 flex items-center gap-2">
             <input
@@ -121,7 +119,6 @@ const SettingModal: React.FC<SettingModalProps> = ({
           )}
         </div>
 
-        {/* Interaction Settings */}
         <div className="mb-6">
           <h4 className="mb-2 text-sm font-medium text-gray-700">
             Reader Interactions
@@ -156,7 +153,6 @@ const SettingModal: React.FC<SettingModalProps> = ({
           </label>
         </div>
 
-        {/* Cover Image */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-gray-700">
             Cover Image URL
@@ -175,7 +171,6 @@ const SettingModal: React.FC<SettingModalProps> = ({
           />
         </div>
 
-        {/* Excerpt */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-gray-700">
             Excerpt

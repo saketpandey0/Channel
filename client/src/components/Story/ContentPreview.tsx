@@ -6,6 +6,8 @@ import { X, MessageCircle, Bookmark, Share, Clock } from "lucide-react";
 import type { Story } from "../../types/story";
 import { ClapButton } from "./ClapButton";
 import { useNavigate } from "react-router-dom";
+import { useBookmarks } from "../../hooks/useBookmarks";
+
 
 interface ContentPreviewProps {
   story: Story;
@@ -19,6 +21,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
+  const { bookmarked } = useBookmarks(story.author.id, story.id, false);
   
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +49,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       };
     }
   }, [isOpen]);
+
+  
 
   if (!isOpen) return null;
 
@@ -82,6 +87,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
     e.stopPropagation();
   };
+
 
   const handleTouchMove = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -176,7 +182,11 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
             <div className="flex items-center gap-2">
               <button className="rounded-full p-2 transition-colors hover:bg-gray-100">
-                <Bookmark className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                <Bookmark
+                  className={`h-5 w-5 ${
+                    bookmarked ? "text-blue-600" : "text-gray-400"
+                  }`}
+                />
               </button>
               <button className="rounded-full p-2 transition-colors hover:bg-gray-100">
                 <Share className="h-5 w-5 text-gray-400 hover:text-blue-600" />

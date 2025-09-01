@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 200 * 1024 * 1024 , // 200MB limit
   },
   fileFilter: (req, file, cb) => {
     console.log("uploading file", file.mimetype);
@@ -42,7 +42,7 @@ export const uploadImage = [
     async (req: Request, res: Response): Promise<any> => {
         try {
             console.log("start upload");
-            const {storyId} = req.params;
+            const {id} = req.params;
             const userId = req.session?.user?.userId || req.user?.userId;
             if(!userId){
                 return res.status(401).json({error: "Unauthorized Access"});
@@ -65,7 +65,7 @@ export const uploadImage = [
 
             const storyMedia = await prisma.storyMedia.create({
               data: {
-                storyId,
+                storyId: id,
                 mediaId: media.id,
               },
             });
@@ -90,7 +90,7 @@ export const uploadVideo = [
     upload.single('video'),
     async (req: Request, res: Response): Promise<any> => {
         try {
-            const {storyId} = req.params;
+            const {id} = req.params;
             const userId = req.session?.user?.userId || req.user?.userId;
             if(!userId){
                 return res.status(401).json({error: "Unauthorized Access"});
@@ -112,7 +112,7 @@ export const uploadVideo = [
 
             const storyMedia = await prisma.storyMedia.create({
               data: {
-                storyId,
+                storyId: id,
                 mediaId: media.id,
               },
             });

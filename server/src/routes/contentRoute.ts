@@ -5,8 +5,8 @@ const router = Router();
 
 
 
-router.post('/upload/image', uploadImage);
-router.post('/upload/video', uploadVideo);
+router.post('/upload/:id/image', uploadImage);
+router.post('/upload/:id/video', uploadVideo);
 router.get('/media/:id', getMedia);
 router.get('/stories/related/:id', getRelatedStories);
 router.post('/stories/:id/report', reportStory);

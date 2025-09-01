@@ -143,28 +143,32 @@ export const getBatchFollowData = async (userIds: string[]) => {
     return reponse.data;
 }
 
-export const bookmarkStory = async (storyId: string) => {
-    const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/bookmark`, null, {
-        withCredentials: true,
-        headers: {
-        'Content-Type': 'application/json',
-        }
-    });
-    return response.data;
+export const toogleBookmark = async (storyId: string) => {  
+    try {
+        const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/bookmark`, {}, {
+            withCredentials: true,
+            headers: {
+            'Content-Type': 'application/json',
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error toggling bookmark", error);    
+        throw error;
+    }
 }
 
-export const removeBookmark = async (storyId: string) => {
-    const response = await axios.delete(`${BACKEND_URL}/api/feature/story/${storyId}/bookmark`, {
-        withCredentials: true,
-    });
-    return response.data;
-}
-
-export const getUserBookmarks = async (userId: string) => {
-    const response = await axios.get(`${BACKEND_URL}/api/feature/user/${userId}/bookmarks`, {
-        withCredentials: true,
-    });
-    return response.data;
+export const getUserBookmarks = async () => {
+    try {
+        const response = await axios.get(`${BACKEND_URL}/api/feature/user/bookmarks`, {
+            withCredentials: true,
+        });
+        return response.data;
+    }
+    catch (error) {
+        console.error("Error fetching bookmarks", error);
+        throw error;
+    }
 }
 
 export const contentSearch = async (q: string) => {

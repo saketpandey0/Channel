@@ -11,7 +11,7 @@ export interface MediaItem {
   url: string;
   filename: string;
   size: number;
-  type: "image" | "video";
+  type: "image" | "video" | "audio";
 }
 
 export interface ToolbarProps {
@@ -21,8 +21,7 @@ export interface ToolbarProps {
   handleRedo: () => void;
 }
 
-export interface StoryData {
-  id?: string;
+export interface StoryBase {
   title: string;
   subtitle: string;
   content: string;
@@ -31,8 +30,26 @@ export interface StoryData {
   tags: string[];
   publicationId?: string;
   isPremium: boolean;
-  price?: number;
   allowComments: boolean;
   allowClaps: boolean;
   status: "DRAFT" | "PUBLISHED" | "SCHEDULED";
+  mediaIds: string[];
 }
+
+export interface CreateStoryData extends StoryBase {}
+
+// Update payload always has an id
+export interface UpdateStoryData extends StoryBase {
+  id: string;
+  price?: number;
+}
+
+// Client-side state can be either
+export type StoryData = Partial<UpdateStoryData> & StoryBase;
+
+
+export type EditorProps = {
+  story: StoryData;
+  onUpdate: React.Dispatch<React.SetStateAction<StoryData>>;
+  onNext: () => void;
+};

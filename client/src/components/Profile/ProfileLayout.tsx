@@ -11,11 +11,12 @@ import { ProfileUpdate } from "./ProfileUpdate";
 
 interface ProfileLayoutProps {
   username: string;
+  defaultTab: string; 
 }
 
-export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username }) => {
+export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username, defaultTab }) => {
   const { profileUser, viewContext, isLoading } = useProfileContext(username);
-  const { tabs, activeTab, setActiveTab } = useProfileTabs(profileUser, viewContext);
+  const { tabs, activeTab, setActiveTab } = useProfileTabs(profileUser, defaultTab, viewContext);
   const [selectedContent, setSelectedContent] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const editRef = useRef<HTMLButtonElement>(null);

@@ -1,9 +1,9 @@
 import axios from "axios";
 import { BACKEND_URL } from "../const";
+import type { StoryData } from "../components/Editor/types";
 
 
-
-export const createStory = async (payload: any) => {
+export const createStory = async (payload: StoryData) => {
     const response = await axios.post(`${BACKEND_URL}/api/story/create`, {payload}, {
         withCredentials: true
     });
@@ -11,7 +11,7 @@ export const createStory = async (payload: any) => {
 }
 
 
-export const updateStory = async (id: string, payload: any) => {
+export const updateStory = async (id: string, payload: Partial<StoryData>): Promise<StoryData> => {
     const response = await axios.put(`${BACKEND_URL}/api/story/update/story/${id}`, {payload}, {
         withCredentials: true,
         headers: {

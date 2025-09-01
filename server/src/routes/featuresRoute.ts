@@ -1,5 +1,5 @@
 import {Router} from 'express'
-import { toggleClapStory, getStoryClapData, getBatchStoryMetaData, addComment, getComments, updateComment, deleteComment, replycomment, toggleCommentClap, getBatchCommentClapData, toggleUserFollow, getUserFollowData, getBatchFollowData, toggleStoryBookmark, contentSearch } from '../controller/featuresController';
+import { toggleClapStory, getStoryClapData, getBatchStoryMetaData, addComment, getComments, updateComment, deleteComment, replycomment, toggleCommentClap, getBatchCommentClapData, toggleUserFollow, getUserFollowData, getBatchFollowData, toggleStoryBookmark, contentSearch, getUserBookmarks } from '../controller/featuresController';
 import { authenticate } from '../middlewares/middleware';
 
 const router = Router();
@@ -22,7 +22,8 @@ router.post("/user/:id/follow", toggleUserFollow);
 router.get("/user/:id/follow", getUserFollowData);
 router.post("/user/follows", getBatchFollowData);
 
-router.get("/story/:id/bookmark", toggleStoryBookmark);
+router.post("/story/:id/bookmark", toggleStoryBookmark);
+router.get("/user/bookmarks", getUserBookmarks);
 
 router.get("/search", contentSearch);
 
