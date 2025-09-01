@@ -21,8 +21,8 @@ app.use((0, cors_1.default)({
     exposedHeaders: ['Authorization'],
 }));
 app.use((0, cookie_parser_1.default)());
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.json({ limit: "5mb" }));
+app.use(express_1.default.urlencoded({ limit: "5mb", extended: true }));
 app.use((0, express_session_1.default)({
     secret: process.env.COOKIE_SECRET || 'your_secret_key',
     resave: false,
@@ -36,17 +36,6 @@ app.use((0, express_session_1.default)({
     },
     rolling: true,
 }));
-app.use((req, res, next) => {
-    var _a;
-    console.log('=== Session Debug Info ===');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session exists:', !!req.session);
-    console.log('Session user:', (_a = req.session) === null || _a === void 0 ? void 0 : _a.user);
-    console.log('Cookies:', req.cookies);
-    console.log('URL:', req.method, req.path);
-    console.log('========================');
-    next();
-});
 (0, passport_1.initPassport)();
 app.use(passport_2.default.initialize());
 app.use(passport_2.default.session());

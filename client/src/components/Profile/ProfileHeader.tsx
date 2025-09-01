@@ -23,13 +23,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="block md:hidden">
-            <Avatar className="border border-gray-600 size-18">
-              <img
-                src={user.avatar}
-                // alt={user.name}
-                className="size-18 rounded-full object-cover"
-              />  
-            </Avatar>   
+            <Avatar className="border border-blue-600 size-18 flex items-center justify-center bg-gray-200 text-blue-600 font-semibold">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="size-18 rounded-full object-cover"
+                />
+              ) : (
+                <span>{user.name.charAt(0).toUpperCase()}</span>
+              )}
+            </Avatar>
           </div>
           <h1 className="text-4xl font-bold text-gray-900">
             {user.name}

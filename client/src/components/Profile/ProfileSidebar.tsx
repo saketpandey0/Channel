@@ -46,13 +46,17 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
     <div className="space-y-6">
       <div className='flex flex-col bg-slate-100 shadow-slate-700/50 hover:shadow-xl min-h-[calc(100vh-48px)] p-6 rounded-xl shadow-sm border border-gray-100'>
         <div className='p-4 flex flex-col gap-2'>
-            <Avatar className="border border-gray-600 size-18">
-              <img
-                src={user.avatar}
-                // alt={user.name}
-                className="size-18 rounded-full object-cover"
-              />  
-            </Avatar>  
+            <Avatar className="border border-blue-600 size-18 flex items-center justify-center bg-gray-200 text-blue-600 font-semibold">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="size-18 rounded-full object-cover"
+                />
+              ) : (
+                <span>{user.name.charAt(0).toUpperCase()}</span>
+              )}
+            </Avatar>
         </div>
         <div>
         </div>

@@ -6,8 +6,8 @@ import AboutTab from '../components/Profile/tabs/AboutTab';
 import BookmarksTab from '../components/Profile/tabs/BookmarksTab';
 
 
-export const useProfileTabs = (user: ProfileUser | null, viewContext: ProfileViewContext) => {
-  const [activeTab, setActiveTab] = useState('stories');
+export const useProfileTabs = (user: ProfileUser | null, defaultTab: string | null, viewContext: ProfileViewContext) => {
+  const [activeTab, setActiveTab] = useState(defaultTab || 'stories');
 
   const tabs: ProfileTabConfig[] = useMemo(() => {
     if (!user) return [];

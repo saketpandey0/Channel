@@ -3,7 +3,7 @@ import storyValidation from "../validators/storyValidation";
 import prisma from "../db"
 import { generateSlug } from "../utils/generateSlug";
 import { calcReadTime } from "../utils/calcReadTime";
-import { cache } from "../cache/redisCache"; // Import your cache
+import { cache } from "../cache/redisCache";
 
 
 
@@ -13,13 +13,15 @@ export const createStory = async (req: Request, res: Response): Promise<any> => 
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-
-        const { success, data } = storyValidation.safeParse(req.body);
+        console.log(req.body);
+        const { success, data } = storyValidation.safeParse(req.body.payload);
+        console.log("data", data);
+        console.log("success", success);
         if (!success) {
-            return res.status(400).json({ error: "Invalid story data", issues: data });
+            return res.status(400).json({ error: "Invalid story data"});
         }
 
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps,status, mediaIds } = data;
         const slug = generateSlug(title);
         const readTime = calcReadTime(content);
         const wordCount = content.split(/\s+/).length;
@@ -40,7 +42,7 @@ export const createStory = async (req: Request, res: Response): Promise<any> => 
                 isPremium: isPremium || false,
                 allowComments: allowComments || true,
                 allowClaps: allowClaps || true,
-                status: 'DRAFT',
+                status: status || 'DRAFT',
             },
             include: {
                 media: true,
@@ -295,8 +297,7 @@ export const getStories = async (req: Request, res: Response): Promise<any> => {
 export const updateStory = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
-
-        const userId = req.session?.user?.userId || req.user?.userId ;
+        const userId = req.session?.user?.userId || req.user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: "Authentication required" });
@@ -304,24 +305,14 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
 
         const story = await prisma.story.findUnique({
             where: { id },
-            include: {
-                tags: true,
-                versions: true
-            }
+            include: { tags: true, versions: true }
         });
 
-        if (!story) {
-            return res.status(404).json({ error: "Story not found" });
-        }
+        if (!story) return res.status(404).json({ error: "Story not found" });
+        if (story.authorId !== userId) return res.status(403).json({ error: "Access denied" });
 
-        if (story.authorId !== userId) {
-            return res.status(403).json({ error: "Access denied" });
-        }
-
-        const { success, data } = storyValidation.safeParse(req.body);
-        if (!success) {
-            return res.status(400).json({ error: "Invalid story data" });
-        }
+        const { success, data } = storyValidation.safeParse(req.body.payload);
+        if (!success) return res.status(400).json({ error: "Invalid story data" });
 
         const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
 
@@ -358,57 +349,34 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
                 allowClaps: allowClaps !== undefined ? allowClaps : story.allowClaps
             },
             include: {
-                author: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true
-                    }
-                },
-                tags: {
-                    include: {
-                        tag: true
-                    }
-                },
+                author: { select: { id: true, username: true, name: true, avatar: true } },
+                tags: { include: { tag: true } },
                 media: true
             }
         });
-        
+
         if (tags) {
-            await prisma.storyTag.deleteMany({
-                where: {
-                    storyId: id
-                }
-            });
+            await prisma.storyTag.deleteMany({ where: { storyId: id } });
             for (const tagName of tags) {
                 const tag = await prisma.tag.upsert({
-                    where: {
-                        name: tagName
-                    },
-                    create: {
-                        name: tagName,
-                        slug: generateSlug(tagName)
-                    },
+                    where: { name: tagName },
+                    create: { name: tagName, slug: generateSlug(tagName) },
                     update: {}
                 });
                 await prisma.storyTag.create({
-                    data: {
-                        storyId: id,
-                        tagId: tag.id
-                    }
-                })
+                    data: { storyId: id, tagId: tag.id }
+                });
             }
         }
 
         if (mediaIds && mediaIds.length > 0) {
             for (const [index, mediaId] of mediaIds.entries()) {
-                await prisma.storyMedia.create({
-                data: {
-                    storyId: id,
-                    mediaId,
-                    order: index
-                }
+                await prisma.storyMedia.upsert({
+                    where: {
+                        storyId_mediaId: { storyId: id, mediaId }
+                    },
+                    update: { order: index },
+                    create: { storyId: id, mediaId, order: index }
                 });
             }
         }
@@ -426,6 +394,7 @@ export const updateStory = async (req: Request, res: Response): Promise<any> => 
         return res.status(500).json({ err: "Internal server error" })
     }
 }
+
 
 
 export const deleteStory = async (req: Request, res: Response): Promise<any> => {

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resendVerification = exports.verifyEmail = exports.resetPassword = exports.forgetPassword = exports.refreshToken = exports.logoutUser = exports.updateUserProfile = exports.getUserProfile = exports.getCurrentUser = exports.loginUser = exports.registerUser = void 0;
+exports.resendVerification = exports.verifyEmail = exports.resetPassword = exports.forgetPassword = exports.refreshToken = exports.logoutUser = exports.checkUsernameAvailability = exports.updateUserProfile = exports.getUserProfile = exports.getCurrentUser = exports.loginUser = exports.registerUser = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = __importDefault(require("../db"));
 const uuid_1 = require("uuid");
@@ -21,6 +21,7 @@ const userValidation_1 = __importDefault(require("../validators/userValidation")
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
+const userValidation_2 = require("../validators/userValidation");
 const transporter = nodemailer_1.default.createTransport({
     service: "gmail",
     host: "smtp.gmail.com",
@@ -181,9 +182,11 @@ const getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 id: true,
                 name: true,
                 username: true,
+                email: true,
                 bio: true,
                 avatar: true,
-                isVerified: true
+                isVerified: true,
+                role: true
             }
         });
         if (!user) {
@@ -233,32 +236,103 @@ const getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.getUserProfile = getUserProfile;
 const updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
-    const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
-    if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-    }
-    const { success, data } = req.body;
-    if (!success) {
-        return res.status(400).json({ error: "Invalid profile data" });
-    }
-    const { name, bio, avatar } = data;
     try {
-        yield db_1.default.user.update({
+        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        if (!userId) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
+        console.log("Profile update request body:", req.body);
+        const { success, data } = userValidation_2.profileUpdateValidation.safeParse(req.body.payload);
+        if (!success) {
+            return res.status(400).json({
+                error: "Invalid profile data"
+            });
+        }
+        const { name, username, bio, avatar, location, website } = data;
+        if (username) {
+            const existingUser = yield db_1.default.user.findFirst({
+                where: {
+                    username: username,
+                    id: { not: userId }
+                }
+            });
+            if (existingUser) {
+                return res.status(400).json({ error: "Username is already taken" });
+            }
+        }
+        const updatedUser = yield db_1.default.user.update({
             where: { id: userId },
             data: {
                 name,
-                bio,
-                avatar
+                username,
+                bio: bio || null,
+                avatar: avatar || null,
+                location: location || null,
+                website: website || null,
+                updatedAt: new Date()
+            },
+            select: {
+                id: true,
+                name: true,
+                username: true,
+                email: true,
+                bio: true,
+                avatar: true,
+                location: true,
+                website: true,
+                createdAt: true,
+                updatedAt: true
             }
         });
-        res.status(200).json({ message: "Profile updated successfully" });
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
     }
-    catch (err) {
-        console.error(err);
+    catch (error) {
+        console.error("Error updating profile:", error);
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: "Username is already taken" });
+        }
         res.status(500).json({ error: "Internal server error" });
     }
 });
 exports.updateUserProfile = updateUserProfile;
+const checkUsernameAvailability = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
+    try {
+        const { username } = req.params;
+        const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        if (!username) {
+            return res.status(400).json({ error: "Username is required" });
+        }
+        if (username.length < 3 || username.length > 30) {
+            return res.status(400).json({
+                available: false,
+                error: "Username must be between 3-30 characters"
+            });
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+            return res.status(400).json({
+                available: false,
+                error: "Username can only contain letters, numbers, hyphens, and underscores"
+            });
+        }
+        const existingUser = yield db_1.default.user.findFirst({
+            where: Object.assign({ username: username }, (userId && { id: { not: userId } }))
+        });
+        const isAvailable = !existingUser;
+        res.status(200).json({
+            available: isAvailable,
+            username: username
+        });
+    }
+    catch (error) {
+        console.error("Error checking username availability:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+exports.checkUsernameAvailability = checkUsernameAvailability;
 const logoutUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const refreshToken = req.cookies.refreshToken;
     try {

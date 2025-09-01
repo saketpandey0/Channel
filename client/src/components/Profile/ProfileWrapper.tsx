@@ -5,6 +5,7 @@ import { ProfileLayout } from "./ProfileLayout";
 export const ProfileWrapper = () => {
     const {username, tab} = useParams<{username: string, tab: string}>();
     console.log("logging username: ",username);
+    console.log("tab to open",tab)
     if(!username){
         return <div>Invalid User Profile URL</div>
     }
@@ -17,7 +18,7 @@ export const ProfileWrapper = () => {
     return (
         <ProfileLayout
             username={username}
-            // defaultTab={tab}
+            defaultTab={tab}
         />
         
     )

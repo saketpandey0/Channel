@@ -18,6 +18,7 @@ router.post("/story/:id/comment/clap", featuresController_1.getBatchCommentClapD
 router.post("/user/:id/follow", featuresController_1.toggleUserFollow);
 router.get("/user/:id/follow", featuresController_1.getUserFollowData);
 router.post("/user/follows", featuresController_1.getBatchFollowData);
-router.get("/story/:id/bookmark", featuresController_1.toggleStoryBookmark);
+router.post("/story/:id/bookmark", featuresController_1.toggleStoryBookmark);
+router.get("/user/bookmarks", featuresController_1.getUserBookmarks);
 router.get("/search", featuresController_1.contentSearch);
 exports.default = router;

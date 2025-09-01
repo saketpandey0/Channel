@@ -4,6 +4,7 @@ import Stories from "../../Story/Stories";
 import type { ProfileViewContext } from "../../../types/profile";
 
 interface BookmarksTabProps {
+  storyId: string;
   userId: string;
   viewContext: ProfileViewContext;
   onBookmarkClick: (bookmark: any) => void;
@@ -12,13 +13,14 @@ interface BookmarksTabProps {
 }
 
 const BookmarksTab: React.FC<BookmarksTabProps> = ({
+  storyId,
   userId,
   viewContext,
   onBookmarkClick,
   hovered,
   setHovered
 }) => {
-  const { data: bookmarks, isLoading } = useBookmarks(userId);
+  const { data, isLoading, bookmarked, toggleBookmark } = useBookmarks(userId, storyId, false);
 
   if (!viewContext.isOwner) {
     return <div className="p-6 text-center text-gray-600">Access denied</div>;
@@ -28,7 +30,7 @@ const BookmarksTab: React.FC<BookmarksTabProps> = ({
     return <div className="p-6">Loading bookmarks...</div>;
   }
 
-  if (!bookmarks || bookmarks.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="p-6 text-center">
         <p className="text-gray-600">No bookmarks yet.</p>

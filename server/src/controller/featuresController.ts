@@ -1,4 +1,4 @@
-import { Request, response, Response, Router } from "express";
+import e, { Request, response, Response, Router } from "express";
 import prisma from "../db"
 import commentValidation from "../validators/commentValidation";
 import { cache } from "../cache/redisCache";
@@ -989,6 +989,54 @@ export const toggleStoryBookmark = async (req: Request, res: Response): Promise<
 
     } catch (error: any) {
         console.error("Toggle bookmark error:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const getUserStoryBookmarks = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const userId = req.session?.user?.userId || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Access" });
+        }
+        const bookmarks = await prisma.bookmark.findMany({
+            where: { 
+                userId, storyId: id 
+            },
+            select: { storyId: true }
+        });
+        const response = bookmarks.reduce((acc, bookmark) => {
+            acc[bookmark.storyId] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+        return res.status(200).json(response);
+    } catch (error: any) {
+        console.error('Get bookmarks error:', error);
+        return res.status(500).json({ error: "Internal server error" });
+    }   
+}
+
+export const getUserBookmarks = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.session?.user?.userId || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized Access" });
+        }
+
+        const bookmarks = await prisma.bookmark.findMany({
+            where: { userId },
+            select: { storyId: true }
+        });
+
+        const response = bookmarks.reduce((acc, bookmark) => {
+            acc[bookmark.storyId] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+
+        return res.status(200).json(response);
+    } catch (error: any) {
+        console.error('Get bookmarks error:', error);
         return res.status(500).json({ error: "Internal server error" });
     }
 };

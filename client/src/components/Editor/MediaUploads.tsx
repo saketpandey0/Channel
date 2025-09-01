@@ -26,7 +26,7 @@ const MediaUploads: React.FC<MediaUploadsProps> = ({ uploadedMedia, onCopyUrl })
               />
             ) : (
               <div className="flex h-20 w-full items-center justify-center rounded border bg-gray-200">
-                <Video size={24} className="text-gray-400" />
+                <Video size={30} className="text-gray-400" />
               </div>
             )}
             <div className="bg-opacity-50 absolute inset-0 flex items-center justify-center rounded bg-black opacity-0 transition-opacity group-hover:opacity-100">

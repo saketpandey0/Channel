@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import {loginUser, registerUser, refreshToken, logoutUser, forgetPassword, resetPassword, verifyEmail, resendVerification, updateUserProfile, getUserProfile } from '../controller/userController'
+import {loginUser, registerUser, refreshToken, logoutUser, forgetPassword, resetPassword, verifyEmail, resendVerification, updateUserProfile, getUserProfile, checkUsernameAvailability } from '../controller/userController'
 import passport from 'passport';
 import { getCurrentUser } from '../controller/userController';
 
@@ -9,7 +9,8 @@ router.post('/signup', registerUser);
 router.post('/signin', loginUser);
 router.post('/logout', logoutUser)
 router.get('/profile/:username', getUserProfile); 
-router.post('/update-profile', updateUserProfile);
+router.post('/update/:userId/profile', updateUserProfile);
+router.get('/check-username/:username', checkUsernameAvailability);
 router.get('/session', getCurrentUser);
 router.get('/refresh', refreshToken);
 router.post('/forgot-password', forgetPassword);

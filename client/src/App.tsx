@@ -3,7 +3,6 @@ import { LandingPage } from './screens/LandingPage'
 import { Routes, Route } from "react-router-dom";
 import { StoriesLayout } from './components/Story/StoriesLayout';
 import { Write } from './components/Editor/Write';
-import { Notification } from './pages/notification';
 import Statsboard from './components/Analytics/Statsboard';
 import { ProfileWrapper } from './components/Profile/ProfileWrapper';
 // import ContentWrapper from './components/searchContenet/ContentWrapper';
@@ -21,9 +20,7 @@ function App() {
         <Route path="/admin" element={<AdminWrapper />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/publication/:id" element={<PublicationPage  />} />
-        <Route path="/editor" element={<Write />} />
-        <Route path="/notification" element={<Notification />} />
-        
+        <Route path="/editor" element={<Write />} />        
       </Routes>
   )
 }

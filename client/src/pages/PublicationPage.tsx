@@ -101,7 +101,6 @@ export default function PublicationPage() {
   return (
     <Card className="mx-auto max-w-7xl min-h-screen rounded-xl border border-gray-100 bg-slate-100 px-4 py-8 shadow-sm sm:px-6 lg:px-8">
       <div className="flex flex-col gap-6">
-        {/* Publication Header */}
         <CardHeader className="min-h-[10rem] bg-gradient-to-r from-blue-300 to-blue-400 rounded-xl p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
@@ -138,7 +137,6 @@ export default function PublicationPage() {
           </div>
         </CardHeader>
 
-        {/* Stories Grid */}
         <div className="w-full">
           {publicationData.stories && publicationData.stories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
@@ -148,7 +146,6 @@ export default function PublicationPage() {
                   className="w-full rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-6 py-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
                   onClick={() => handleStoryClick(story)}
                 >
-                  {/* Story Cover Image */}
                   {story.coverImage && (
                     <div className="mb-4 overflow-hidden rounded-lg">
                       <img 
@@ -159,7 +156,6 @@ export default function PublicationPage() {
                     </div>
                   )}
 
-                  {/* Story Content */}
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                       {story.title}
@@ -171,7 +167,6 @@ export default function PublicationPage() {
                       </p>
                     )}
 
-                    {/* Story Meta */}
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6 text-xs">
@@ -199,7 +194,6 @@ export default function PublicationPage() {
                       </span>
                     </div>
 
-                    {/* Story Tags */}
                     {story.tags && story.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 pt-2">
                         {story.tags.slice(0, 3).map((tag, index) => (
@@ -231,7 +225,6 @@ export default function PublicationPage() {
           )}
         </div>
 
-        {/* Content Preview Modal */}
         {selectedStory && (
           <ContentPreview 
             story={selectedStory}  

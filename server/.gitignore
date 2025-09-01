@@ -1,2 +1,10 @@
 node_modules
 .env
+/server/uploads/
+dist
+# Uploads directory
+uploads/
+server/uploads/
+*.mp4
+*.mov
+*.avi

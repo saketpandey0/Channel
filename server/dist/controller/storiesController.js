@@ -17,7 +17,7 @@ const storyValidation_1 = __importDefault(require("../validators/storyValidation
 const db_1 = __importDefault(require("../db"));
 const generateSlug_1 = require("../utils/generateSlug");
 const calcReadTime_1 = require("../utils/calcReadTime");
-const redisCache_1 = require("../cache/redisCache"); // Import your cache
+const redisCache_1 = require("../cache/redisCache");
 const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
@@ -25,11 +25,14 @@ const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const { success, data } = storyValidation_1.default.safeParse(req.body);
+        console.log(req.body);
+        const { success, data } = storyValidation_1.default.safeParse(req.body.payload);
+        console.log("data", data);
+        console.log("success", success);
         if (!success) {
-            return res.status(400).json({ error: "Invalid story data", issues: data });
+            return res.status(400).json({ error: "Invalid story data" });
         }
-        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
+        const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, status, mediaIds } = data;
         const slug = (0, generateSlug_1.generateSlug)(title);
         const readTime = (0, calcReadTime_1.calcReadTime)(content);
         const wordCount = content.split(/\s+/).length;
@@ -50,7 +53,7 @@ const createStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 isPremium: isPremium || false,
                 allowComments: allowComments || true,
                 allowClaps: allowClaps || true,
-                status: 'DRAFT',
+                status: status || 'DRAFT',
             },
             include: {
                 media: true,
@@ -288,21 +291,15 @@ const updateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         }
         const story = yield db_1.default.story.findUnique({
             where: { id },
-            include: {
-                tags: true,
-                versions: true
-            }
+            include: { tags: true, versions: true }
         });
-        if (!story) {
+        if (!story)
             return res.status(404).json({ error: "Story not found" });
-        }
-        if (story.authorId !== userId) {
+        if (story.authorId !== userId)
             return res.status(403).json({ error: "Access denied" });
-        }
-        const { success, data } = storyValidation_1.default.safeParse(req.body);
-        if (!success) {
+        const { success, data } = storyValidation_1.default.safeParse(req.body.payload);
+        if (!success)
             return res.status(400).json({ error: "Invalid story data" });
-        }
         const { title, subtitle, content, excerpt, coverImage, tags, publicationId, isPremium, allowComments, allowClaps, mediaIds } = data;
         const slug = title ? (0, generateSlug_1.generateSlug)(title) : story.slug;
         const readTime = content ? (0, calcReadTime_1.calcReadTime)(content) : story.readTime;
@@ -335,55 +332,32 @@ const updateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 allowClaps: allowClaps !== undefined ? allowClaps : story.allowClaps
             },
             include: {
-                author: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        avatar: true
-                    }
-                },
-                tags: {
-                    include: {
-                        tag: true
-                    }
-                },
+                author: { select: { id: true, username: true, name: true, avatar: true } },
+                tags: { include: { tag: true } },
                 media: true
             }
         });
         if (tags) {
-            yield db_1.default.storyTag.deleteMany({
-                where: {
-                    storyId: id
-                }
-            });
+            yield db_1.default.storyTag.deleteMany({ where: { storyId: id } });
             for (const tagName of tags) {
                 const tag = yield db_1.default.tag.upsert({
-                    where: {
-                        name: tagName
-                    },
-                    create: {
-                        name: tagName,
-                        slug: (0, generateSlug_1.generateSlug)(tagName)
-                    },
+                    where: { name: tagName },
+                    create: { name: tagName, slug: (0, generateSlug_1.generateSlug)(tagName) },
                     update: {}
                 });
                 yield db_1.default.storyTag.create({
-                    data: {
-                        storyId: id,
-                        tagId: tag.id
-                    }
+                    data: { storyId: id, tagId: tag.id }
                 });
             }
         }
         if (mediaIds && mediaIds.length > 0) {
             for (const [index, mediaId] of mediaIds.entries()) {
-                yield db_1.default.storyMedia.create({
-                    data: {
-                        storyId: id,
-                        mediaId,
-                        order: index
-                    }
+                yield db_1.default.storyMedia.upsert({
+                    where: {
+                        storyId_mediaId: { storyId: id, mediaId }
+                    },
+                    update: { order: index },
+                    create: { storyId: id, mediaId, order: index }
                 });
             }
         }

@@ -12,6 +12,7 @@ const storyValidation = zod_1.z.object({
     isPremium: zod_1.z.boolean().optional(),
     allowComments: zod_1.z.boolean().optional(),
     allowClaps: zod_1.z.boolean().optional(),
+    status: zod_1.z.enum(["DRAFT", "PUBLISHED", "SCHEDULED"]).optional(),
     mediaIds: zod_1.z.array(zod_1.z.string()).optional(),
 });
 exports.default = storyValidation;

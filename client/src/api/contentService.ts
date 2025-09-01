@@ -3,10 +3,10 @@ import { BACKEND_URL } from "../const";
 
 
 
-export const uploadImageService = async (formData: FormData) => {
+export const uploadImageService = async (id: string, formData: FormData) => {
   try {
     console.log("uploading")
-    const response = await axios.post(`${BACKEND_URL}/api/content/upload/image`, formData, {
+    const response = await axios.post(`${BACKEND_URL}/api/content/upload/${id}/image`, formData, {
         withCredentials: true, 
         headers: {
           "Content-Type": "multipart/form-data",
@@ -22,9 +22,9 @@ export const uploadImageService = async (formData: FormData) => {
 };
 
 
-export const uploadVideoService = async (formData: FormData) => {
+export const uploadVideoService = async (id: string, formData: FormData) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/api/upload/video`, formData, {
+    const response = await axios.post(`${BACKEND_URL}/api/content/upload/${id}/video`, formData, {
         withCredentials: true, 
         headers: {
           "Content-Type": "multipart/form-data",
@@ -41,7 +41,7 @@ export const uploadVideoService = async (formData: FormData) => {
 
 export const getMediaService = async (id: string) => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/api/media/${id}`, {
+    const response = await axios.get(`${BACKEND_URL}/api/content/media/${id}`, {
       withCredentials: true,
     });
     return response.data;
@@ -54,7 +54,7 @@ export const getMediaService = async (id: string) => {
 
 export const getRelatedStoriesService = async (id: string) => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/api/stories/${id}/related`, {
+    const response = await axios.get(`${BACKEND_URL}/api/content/stories/${id}/related`, {
       withCredentials: true,
     });
     return response.data;
@@ -68,7 +68,7 @@ export const getRelatedStoriesService = async (id: string) => {
 export const reportStory = async (storyId: string, reason: string, description?: string) => {
   try {
     const response = await axios.post(
-      `${BACKEND_URL}/api/story/${storyId}/report`,
+      `${BACKEND_URL}/api/contetn/story/${storyId}/report`,
       { reason, description },
       {
         withCredentials: true, 

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const adminController_1 = require("../controller/adminController");
 const router = (0, express_1.Router)();
+router.get('/me', ...adminController_1.getCurrentAdmin);
 router.get('/dashboard', ...adminController_1.getAdminDashboard);
 router.get('/users', ...adminController_1.getAdminUsers);
 router.put('/users/:id/status', [...adminController_1.validateUserUpdate, ...adminController_1.updateUserStatus]);
@@ -13,7 +14,7 @@ router.put('/stories/:id/status', [...adminController_1.validateStoryModeration,
 router.delete('/stories/:id', ...adminController_1.removeStory);
 router.post('/stories/bulk-action', ...adminController_1.bulkActionStories);
 router.get('/publications', ...adminController_1.getAdminPublications);
-router.put('/publications/:id/status', ...adminController_1.moderatePublication);
+router.put('/publications/:id/status', [...adminController_1.validatePublicationUpdate, ...adminController_1.moderatePublication]);
 router.get('/reports', adminController_1.getAdminReports);
 router.put('/reports/:id/resolve', ...adminController_1.resolveReport);
 router.get('/analytics', ...adminController_1.getAdminAnalytics);

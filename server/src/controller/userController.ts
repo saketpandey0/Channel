@@ -9,7 +9,7 @@ import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer'
 import { email, includes } from "zod";
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-
+import {profileUpdateValidation} from "../validators/userValidation";
 
 
 const transporter = nodemailer.createTransport({
@@ -246,31 +246,120 @@ export const getUserProfile = async (req: Request, res: Response): Promise<any> 
 
 
 export const updateUserProfile = async (req: Request, res: Response): Promise<any> => {
-  const userId = req.session?.user?.userId || req.user?.userId ;
-  if (!userId) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  const {success, data} = req.body;
-  if(!success){
-    return res.status(400).json({error: "Invalid profile data"});
-  }
-  const {name, bio, avatar} = data;
   try {
-    await prisma.user.update({
-      where: {id: userId},
+    const userId = req.session?.user?.userId || req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    console.log("Profile update request body:", req.body);
+
+    const { success, data } = profileUpdateValidation.safeParse(req.body.payload);
+    
+    if (!success) {
+      return res.status(400).json({ 
+        error: "Invalid profile data"
+      });
+    }
+
+    const { name, username, bio, avatar, location, website } = data;
+
+    if (username) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username: username,
+          id: { not: userId }
+        }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ error: "Username is already taken" });
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
       data: {
         name,
-        bio,
-        avatar
+        username,
+        bio: bio || null,
+        avatar: avatar || null,
+        location: location || null,
+        website: website || null,
+        updatedAt: new Date()
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        bio: true,
+        avatar: true,
+        location: true,
+        website: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
-    res.status(200).json({message: "Profile updated successfully"});
-  } catch(err){
-    console.error(err);
-    res.status(500).json({error: "Internal server error"});
-  }
-}
 
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser
+    });
+
+  } catch (error: any) {
+    console.error("Error updating profile:", error);
+    
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: "Username is already taken" });
+    }
+
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const checkUsernameAvailability = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { username } = req.params;
+    const userId = req.session?.user?.userId || req.user?.userId;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    if (username.length < 3 || username.length > 30) {
+      return res.status(400).json({ 
+        available: false, 
+        error: "Username must be between 3-30 characters" 
+      });
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return res.status(400).json({ 
+        available: false, 
+        error: "Username can only contain letters, numbers, hyphens, and underscores" 
+      });
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        username: username,
+        ...(userId && { id: { not: userId } })
+      }
+    });
+
+    const isAvailable = !existingUser;
+
+    res.status(200).json({
+      available: isAvailable,
+      username: username
+    });
+
+  } catch (error) {
+    console.error("Error checking username availability:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 export const logoutUser = async (req: Request, res: Response): Promise<any> => {
   const refreshToken = req.cookies.refreshToken;
