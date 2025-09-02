@@ -53,10 +53,14 @@ export const getCurrentUser = async () => {
 
 
 export const logoutUser = async () => {
-    const response = await axios.post(`${BACKEND_URL}/api/auth/logout`, null, {
-        withCredentials: true,
-      });
-    return response.data;
+    try {
+    await axios.post(`${BACKEND_URL}/api/auth/logout`, {}, { withCredentials: true });
+    sessionStorage.removeItem("user"); 
+    return true;
+  } catch (err: any) {
+    console.error("Logout failed:", err.response?.data || err.message);
+    return false;
+  }
 }   
 
 export const fetchUserProfile = async (username: string) => {

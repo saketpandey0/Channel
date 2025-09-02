@@ -44,7 +44,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
 
   return (
     <div className="space-y-6">
-      <div className='flex flex-col bg-slate-100 shadow-slate-700/50 hover:shadow-xl min-h-[calc(100vh-48px)] p-6 rounded-xl shadow-sm border border-gray-100'>
+      <div className='flex flex-col shadow-slate-700/50 hover:shadow-xl min-h-[calc(100vh-48px)] p-6 rounded-xl shadow-sm border border-gray-100'>
         <div className='p-4 flex flex-col gap-2'>
             <Avatar className="border border-blue-600 size-18 flex items-center justify-center bg-gray-200 text-blue-600 font-semibold">
               {user.avatar ? (
@@ -85,7 +85,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ user, viewContext, onEd
               disabled={isLoading}
               className={`m-4 cursor-pointer rounded-2xl text-xs font-bold ${
                 isFollowing 
-                  ? 'bg-gray-200 text-gray-900 hover:bg-gray-300' 
+                  ? 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-200' 
                   : 'bg-gray-900 text-white hover:bg-gray-800'
               }`}
             >

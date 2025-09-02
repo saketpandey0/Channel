@@ -5,7 +5,6 @@ type Theme = "light" | "dark" | "system";
 
 export const ModeToggle = () => {
     const [theme, setTheme] = useState<Theme>(() => {
-        // Initialize from localStorage or default to system
         const savedTheme = localStorage.getItem("theme") as Theme;
         return savedTheme || "system";
     });
@@ -55,7 +54,7 @@ export const ModeToggle = () => {
         }
     };
 
-    // Determine which icon to show based on effective theme
+    //icons to show
     const getEffectiveTheme = () => {
         if (theme === "system") {
             return systemTheme;

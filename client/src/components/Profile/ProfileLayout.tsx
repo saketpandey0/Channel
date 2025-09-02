@@ -49,7 +49,7 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ username, defaultT
   return (
     <ReactLenis root>
       <div className="min-h-screen">
-        <div className="mx-auto max-w-7xl rounded-xl border border-gray-100 bg-slate-100 px-4 py-8 shadow-sm sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl rounded-xl border border-gray-100 bg-slate-100 dark:bg-zinc-900 px-4 py-8 shadow-sm sm:px-6 lg:px-8">
           <div className="flex gap-8">
             <main className="max-w-4xl flex-1">
               <ProfileHeader

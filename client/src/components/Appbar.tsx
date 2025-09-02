@@ -122,12 +122,12 @@ export const Appbar = () => {
           {!user && (
             <div className="mx-auto flex gap-2">
               <Link to={"/auth?mode=signin"}>
-                <button className="text-md rounded-xl bg-blue-400 p-2 text-white shadow-lg text-shadow-lg/20 hover:shadow-xl/30">
+                <button className="text-md rounded-xl bg-blue-400 p-2 text-white dark:shadow-amber-200 shadow-xs text-shadow-lg/20">
                   Sign in
                 </button>
               </Link>
               <Link to={"/auth?mode=signup"}>
-                <button className="text-md rounded-2xl bg-black p-2 text-white shadow-lg text-shadow-lg/20 hover:shadow-xl/30">
+                <button className="text-md rounded-2xl bg-black p-2 dark:shadow-amber-200 text-white shadow-xs text-shadow-lg/20 ">
                   Get started
                 </button>
               </Link>

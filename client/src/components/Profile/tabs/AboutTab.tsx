@@ -7,7 +7,7 @@ interface AboutTabProps {
 
 const AboutTab: React.FC<AboutTabProps> = ({ user, viewContext }) => {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-[500px] overflow-y-auto">
       {user.bio && (
         <div>
           <h3 className="text-lg font-semibold mb-2">Bio</h3>
@@ -16,7 +16,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ user, viewContext }) => {
       )}
       
       <div className="grid grid-cols-2 gap-6">
-        <div>
+        {/* <div>
           <h3 className="text-lg font-semibold mb-2">Stats</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -41,7 +41,7 @@ const AboutTab: React.FC<AboutTabProps> = ({ user, viewContext }) => {
               </span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {(user.website || user.twitter || user.linkedin || user.github || user.location) && (
           <div>

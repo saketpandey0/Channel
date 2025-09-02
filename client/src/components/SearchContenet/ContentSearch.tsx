@@ -344,7 +344,7 @@ export const ContentSearch = () => {
   return (
     <div ref={searchContainerRef} className="relative">
       <motion.div 
-        className="relative shadow-lg hidden md:block"
+        className="relative shadow-lg hidden md:block dark:bg-zinc-900"
         initial={{ width: "200px" }}
         animate={{ width: isFocused ? "400px" : "200px" }}
         transition={{
@@ -358,16 +358,16 @@ export const ContentSearch = () => {
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Search articles..."
+            placeholder="Search..."
             value={input}
             onChange={handleInputChange}
             onFocus={handleFocus}
-            className="w-full pl-10 pr-10 py-3 rounded-full border border-gray-200 focus:border-gray-400 focus:ring-0 focus:outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
+            className="w-full pl-10 pr-10 py-3 rounded-full border border-gray-200 focus:border-gray-400 focus:ring-0 focus:outline-none transition-all duration-200 bg-gray-50 dark:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900"
           />
           {input && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100  rounded-full transition-colors"
             >
               <Cross2Icon className="h-4 w-4 text-gray-400" />
             </button>
@@ -381,7 +381,7 @@ export const ContentSearch = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 max-h-96 overflow-y-auto z-50"
+              className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-gray-100 max-h-96 overflow-y-auto z-50"
             >
               {/* Tab Navigation */}
               <div className="flex border-b border-gray-100 p-2">
@@ -395,7 +395,7 @@ export const ContentSearch = () => {
                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                       activeTab === tab
                         ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:text-gray-900'
+                        : 'text-gray-600 hover:text-gray-400'
                     }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)} ({searchResults[tab].length})
@@ -429,8 +429,7 @@ export const ContentSearch = () => {
         </AnimatePresence>
       </motion.div>
 
-      {/* Mobile search - keeping original implementation for now */}
-      <div className="md:hidden">
+      {/* <div className="md:hidden">
         <button
           onClick={() => {
             setIsFocused(true);
@@ -499,7 +498,7 @@ export const ContentSearch = () => {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

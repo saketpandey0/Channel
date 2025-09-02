@@ -43,7 +43,7 @@ const BookmarksTab: React.FC<BookmarksTabProps> = ({
 
   return (
     <div className="px-2 pb-1">
-      {bookmarks.map((bookmark: any, index: number) => (
+      {data.map((bookmark: any, index: number) => (
         <div
           key={bookmark.id}
           onMouseEnter={() => setHovered(index)}

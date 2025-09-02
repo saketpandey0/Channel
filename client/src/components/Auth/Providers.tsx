@@ -22,7 +22,7 @@ export const Providers = ({ authType, onMethodSwitch, onAuthTypeSwitch }: Provid
   };
 
   return (
-    <Card className="border-none p-6 bg-slate-100/90" >
+    <Card className="border-none p-6 bg-slate-100/90 dark:bg-slate-700" >
       <div className="flex flex-col gap-8">
         <CardHeader className="flex flex-col text-center">
           <CardTitle className="text-4xl font-semibold">
