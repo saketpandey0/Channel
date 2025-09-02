@@ -513,7 +513,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl bg-white p-6">
+    <div className="mx-auto min-h-screen max-w-4xl bg-white dark:bg-sky-950 p-6">
         <header className="max-w-7xl mx-auto flex flex-row items-center justify-evenly gap-32 pt-2 px-4">
             <div className="flex flex-row max-w-4xl items-center gap-4">
                 <span className="text-4xl font-serif font-bold text-shadow-blue-500">Channel</span>
@@ -530,7 +530,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
             </div>
         </header>
 
-      <div className="sticky top-0 z-10 mb-6 border-b border-gray-200 bg-white p-4">
+      <div className="sticky top-0 z-10 mb-6 border-b border-gray-200 bg-white dark:bg-gray-900 rounded-xl p-4">
         <Toolbar
           execCommand={execCommand}
           isCommandActive={isCommandActive}
@@ -580,7 +580,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
           onChange={(e) => {
             onUpdate({ ...story, title: e.target.value });
           }}
-          className="w-full border-none bg-transparent text-4xl leading-tight font-bold text-gray-900 placeholder-gray-400 outline-none"
+          className="w-full border-none bg-transparent text-4xl leading-tight font-bold text-gray-900 font-serif-custom tracking-tight dark:text-gray-200 placeholder-gray-400 outline-none"
         />
       </div>
 
@@ -593,7 +593,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
           onChange={(e) => {
             onUpdate({ ...story, subtitle: e.target.value });
           }}
-          className="w-full border-none bg-transparent text-xl leading-relaxed text-gray-600 placeholder-gray-400 outline-none"
+          className="w-full border-none bg-transparent text-xl leading-relaxed text-gray-600 placeholder-gray-400 outline-none dark:text-gray-200 tracking-tighter font-serif-custom"
         />
       </div>
 
@@ -649,7 +649,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
             }
           }}
           onInput={saveToHistory}
-          className="min-h-96 border-none text-lg leading-relaxed text-gray-800 focus:outline-none"
+          className="min-h-96 border-none text-lg leading-relaxed text-gray-800 dark:text-gray-200 tracking-tighter  tracking-tighter font-serif-custom focus:outline-none"
           style={{
             wordWrap: "break-word",
             whiteSpace: "pre-wrap",
@@ -659,7 +659,7 @@ const Editor: React.FC<EditorProps> = ({story, onUpdate, onNext}) => {
 
         {(!editorRef.current?.textContent ||
           editorRef.current?.textContent === "") && (
-          <div className="pointer-events-none absolute top-0 left-0 text-lg text-gray-400">
+          <div className="pointer-events-none absolute top-0 left-0 text-lg text-gray-400 dark:text-gray-200 tracking-tighter">
             Tell your story...
           </div>
         )}

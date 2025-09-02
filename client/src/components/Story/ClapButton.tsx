@@ -63,10 +63,10 @@ export const ClapButton: React.FC<ClapButtonProps> = ({ story, storyId }) => {
   return (
     <>
       <button
-        className="flex cursor-pointer items-center gap-2 text-gray-600 transition-colors hover:text-red-500"
+        className="flex items-center gap-2 text-gray-600 transition-colors  cursor-pointer"
         onClick={handleClap}
       >
-        <PiHandsClappingThin className={`h-5 w-5 ${clapped ? "text-yellow-500" : "text-gray-500"}`} />
+        <PiHandsClappingThin className={`h-5 w-5 hover:text-blue-400 ${clapped ? "text-yellow-500" : "text-gray-500"}`} />
         <span>{clapCount > 0 ? clapCount : "0"}</span>
       </button>
     </>

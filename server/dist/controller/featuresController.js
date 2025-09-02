@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBatchStoryMetaData = exports.contentSearch = exports.populateFollowCounts = exports.getUserBookmarks = exports.getUserStoryBookmarks = exports.toggleStoryBookmark = exports.getBatchFollowData = exports.getUserFollowData = exports.toggleUserFollow = exports.replycomment = exports.deleteComment = exports.updateComment = exports.getBatchCommentClapData = exports.toggleCommentClap = exports.getComments = exports.addComment = exports.getStoryClapData = exports.toggleClapStory = void 0;
+exports.getBatchStoryMetaData = exports.contentSearch = exports.populateFollowCounts = exports.getUserBookmarks = exports.getStoryBookmarks = exports.toggleStoryBookmark = exports.getBatchFollowData = exports.getUserFollowData = exports.toggleUserFollow = exports.replycomment = exports.deleteComment = exports.updateComment = exports.getBatchCommentClapData = exports.toggleCommentClap = exports.getComments = exports.addComment = exports.getStoryClapData = exports.toggleClapStory = void 0;
 const db_1 = __importDefault(require("../db"));
 const commentValidation_1 = __importDefault(require("../validators/commentValidation"));
 const redisCache_1 = require("../cache/redisCache");
@@ -322,8 +322,10 @@ exports.getComments = getComments;
 const toggleCommentClap = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
+        console.log("toggling clap", req.params);
         const { id } = req.params;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        console.log("userId", userId);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
@@ -923,7 +925,7 @@ const toggleStoryBookmark = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.toggleStoryBookmark = toggleStoryBookmark;
-const getUserStoryBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getStoryBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {
         const { id } = req.params;
@@ -948,7 +950,7 @@ const getUserStoryBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, fu
         return res.status(500).json({ error: "Internal server error" });
     }
 });
-exports.getUserStoryBookmarks = getUserStoryBookmarks;
+exports.getStoryBookmarks = getStoryBookmarks;
 const getUserBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {

@@ -5,11 +5,20 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type React from "react";
+import { getCurrentUser } from "../../api/authService";
 
 interface EmailAuthProps {
   authType: "signin" | "signup";
   onMethodSwitch: (method: "email" | "social") => void;
   onAuthTypeSwitch: (type: "signin" | "signup") => void;
+}
+
+interface User {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export const EmailAuth = ({
@@ -21,41 +30,40 @@ export const EmailAuth = ({
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { AuthEmail, getCurrentUser } = useAuth();
+  const { AuthEmail } = useAuth();
 
-  const handleEmailAuth = (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    console.log("authType: ",authType)
+    console.log("authType: ", authType);
     if (!email || !password || !authType) {
       setError("Please fill in all fields");
       return;
     }
-    AuthEmail.mutate(
-      {
+    try {
+      await AuthEmail.mutate({
         email,
         password,
         authType,
-      },
-      {
-        onSuccess: () => {
-          navigate("/stories");
-        },
-        onError: (error: any) => {
-          setError(
-            error.response?.data?.message ||
-              "Authentication failed. Please try again.",
-          );
-        },
-      },
+      }, 
+      { onSuccess: () => {
+        getCurrentUser().then((user) => {
+          navigate(user ? "/stories" : "/auth");
+        });
+      }}
     );
+    } catch (error: any) {
+      console.error("Error authenticating:", error);
+      setError(error.message);
+      return;
+    }
   };
 
   return (
     <div className="flex h-screen flex-col items-center justify-center">
       <form
         onSubmit={handleEmailAuth}
-        className="shadow-primary/5 m-4 flex min-w-[40vw] flex-col justify-between gap-12 rounded-2xl border border-none bg-slate-100/9 p-6 shadow-xl"
+        className="shadow-primary/5 m-4 flex min-w-[30vw] flex-col justify-between gap-12 rounded-2xl border border-none bg-slate-100/9 p-6 shadow-xl"
       >
         <div className="flex flex-col items-center justify-center gap-2">
           <motion.div
@@ -85,30 +93,35 @@ export const EmailAuth = ({
             </div>
           )}
 
-          <div className="flex w-full flex-col items-start justify-start pt-2 pb-6 pl-10 md:pt-4 md:pl-20 lg:pl-22">
-            <Label htmlFor="emailInput" className="text-sm md:text-base">
+          <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-2 sm:max-w-md md:max-w-lg lg:max-w-xl">
+            <Label
+              htmlFor="emailInput"
+              className="text-sm font-medium md:text-base"
+            >
               Your email
             </Label>
             <Input
               id="emailInput"
               type="email"
-              className="mt-2 flex w-4/5 items-center justify-center rounded border p-2"
+              className="w-full rounded-md border p-2 text-black dark:bg-zinc-900 dark:text-white"
               placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
 
+          <div className="mx-auto mt-4 flex w-full max-w-sm flex-col gap-2 sm:max-w-md md:max-w-lg lg:max-w-xl">
             <Label
               htmlFor="passwordInput"
-              className="pt-4 text-sm md:text-base"
+              className="text-sm font-medium md:text-base"
             >
               Password
             </Label>
             <Input
               id="passwordInput"
               type="password"
-              className="mt-2 flex w-4/5 items-center justify-center rounded border p-2"
+              className="w-full rounded-md border p-2 text-black dark:bg-zinc-900 dark:text-white"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

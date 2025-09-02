@@ -169,6 +169,7 @@ export const addComment = async (req: Request, res: Response): Promise<any> => {
         if (!story.allowComments) {
             return res.status(401).json({ error: "Story does not allow comments" });
         }
+
         const { success, data } = commentValidation.safeParse(req.body);
         if (!success) {
             return res.status(400).json({ error: "Invalid comment data" });
@@ -335,8 +336,10 @@ export const getComments = async (req: Request, res: Response): Promise<any> => 
 
 export const toggleCommentClap = async (req: Request, res: Response): Promise<any> => {
     try {
+        console.log("toggling clap", req.params);
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+        console.log("userId", userId);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
@@ -993,7 +996,7 @@ export const toggleStoryBookmark = async (req: Request, res: Response): Promise<
     }
 };
 
-export const getUserStoryBookmarks = async (req: Request, res: Response): Promise<any> => {
+export const getStoryBookmarks = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;

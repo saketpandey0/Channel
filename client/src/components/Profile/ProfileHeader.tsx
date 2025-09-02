@@ -19,7 +19,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   viewContext
 }) => {
   return (
-    <div className="rounded-xl border p-6 shadow-sm shadow-slate-700/50 hover:shadow-lg">
+    <div className="rounded-xl border p-6 shadow-sm shadow-slate-700/50 hover:shadow-lg mx-auto">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="block md:hidden">
@@ -28,18 +28,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <img
                   src={user.avatar}
                   alt={user.name}
-                  className="size-18 rounded-full object-cover"
+                  className="sm:size-10 size-18 rounded-full object-cover"
                 />
               ) : (
                 <span>{user.name.charAt(0).toUpperCase()}</span>
               )}
             </Avatar>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="sm:text-4xl font-bold text-gray-900 dark:text-gray-300 text-xl">
             {user.name}
           </h1>
           {user.isVerified && (
-            <span className="text-2xl text-blue-500">
+            <span className="text-2xl text-blue-500 hidden sm:block">
               <GiFeather />
             </span>
           )}
@@ -51,7 +51,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         ) : (
           <div className="flex gap-2">
             {viewContext.canMessage && (
-              <button className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50">
+              <button className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-400 hidden md:block">
                 Message
               </button>
             )}

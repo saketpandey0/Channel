@@ -1,41 +1,41 @@
-import { getUserBookmarks, toogleBookmark } from '../api/featureServices';
-import { useEffect, useState } from 'react';
+import { getStoryBookmarks, toogleBookmark } from '../api/featureServices';
+import { useCallback, useEffect, useState } from 'react';
 
 
 
-export const useBookmarks = (userId: string, storyId: string, status?: boolean) => {
-  const [bookmarked, setBookmarked] = useState(status || false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<any>({});
 
-  useEffect(() => {
-    const fetchFollowStatus = async () => {
-      try {
-        const data = await getUserBookmarks();
-        console.log("data", data);
-        setBookmarked(data.isFollowing);
-        setData(data);
-      } catch (error) {
-        console.error('Failed to fetch follow status:', error);
-      }
-    };
 
-    if (userId) {
-      fetchFollowStatus();
+export const useBookmarks = (storyId: string) => {
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
+
+  const fetchStoryBookmarks = useCallback( async ()=> {
+    try{
+      const data = await getStoryBookmarks(storyId);
+      setBookmarked(data.bookmarked);
+      setBookmarkCount(data.bookmarkCount);
+    }catch(err){
+      console.error("Error fetching bookmarks", err);
     }
-  }, [bookmarked, userId]);
+  },[]);
+  
+  useEffect(()=> {
+    fetchStoryBookmarks();
+  }, [storyId])
 
-  const toggleBookmark = async () => {
-    setIsLoading(true);
+
+  const handleBookmark = useCallback(async (storyId: string)=> {
     try {
-      await toogleBookmark(storyId);
-      setBookmarked((prev) => !prev);
-    } catch (error) {
-      console.error('Failed to toggle follow:', error);
-    } finally {
-      setIsLoading(false);
+      const data = await toogleBookmark(storyId);
+      setBookmarked(data.bookmarkCount);
+      setBookmarkCount( prev => data.bookmarked ? prev + 1 : Math.max(prev - 1, 0));
+    }catch(err){
+      console.error("Error toggling bookmark", err);
     }
-  };
+  },[storyId]);
 
-  return { bookmarked, toggleBookmark, isLoading, data };
-};
+  return { bookmarked, bookmarkCount, handleBookmark };
+}
+
+
+

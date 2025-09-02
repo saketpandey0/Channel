@@ -26,14 +26,14 @@ export const getStoryClapData = async (storyId: string) => {
 }
 
 export const getBatchStoryMetaData = async (storyIds: string[]) => {
-    const response = await axios.post(`${BACKEND_URL}/api/feature/stories/metadata`, {ids:storyIds},  {
+    const response = await axios.post(`${BACKEND_URL}/api/feature/story/metadata`, {ids:storyIds},  {
         withCredentials: true
     });
     return response.data;
 }
 
-export const getStoryComments = async (storyId: string) => {
-    const response = await axios.get(`${BACKEND_URL}/api/feature/story/${storyId}/comments`, {
+export const getStoryComments = async (storyId: string, page: number, limit: number) => {
+    const response = await axios.get(`${BACKEND_URL}/api/feature/story/${storyId}/comments/?page=${page}&limit=${limit}`, {
         withCredentials: true,
     });
     return response.data;
@@ -41,7 +41,7 @@ export const getStoryComments = async (storyId: string) => {
 
 export const commentStory = async (storyId: string, comment: string) => {
     const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comment`, {
-        comment
+        content: comment
     }, {
         withCredentials: true,
         headers: {
@@ -51,8 +51,8 @@ export const commentStory = async (storyId: string, comment: string) => {
     return response.data;
 }
 
-export const deleteComment = async (storyId: string, commentId: string) => {
-    const response = await axios.delete(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}`, {
+export const deleteComment = async (commentId: string) => {
+    const response = await axios.delete(`${BACKEND_URL}/api/feature/story/comments/${commentId}`, {
         withCredentials: true,
         headers: {
         'Content-Type': 'application/json',
@@ -61,9 +61,9 @@ export const deleteComment = async (storyId: string, commentId: string) => {
     return response.data;
 }
 
-export const replycomment = async (storyId: string, commentId: string, comment: string) => {
-    const response = await axios.post(`${BACKEND_URL}/api/feature/stories/${storyId}/comments/${commentId}/reply`, {
-        comment
+export const replyComment = async ( commentId: string, comment: string) => {
+    const response = await axios.post(`${BACKEND_URL}/api/feature/story/comments/${commentId}/reply`, {
+        content: comment
     }, {
         withCredentials: true,
         headers: {
@@ -73,8 +73,8 @@ export const replycomment = async (storyId: string, commentId: string, comment: 
     return response.data;
 }
 
-export const updateComment = async (storyId: string, commentId: string, comment: string) => {
-    const response = await axios.put(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}`, {
+export const updateComment = async (commentId: string, comment: string) => {
+    const response = await axios.put(`${BACKEND_URL}/api/feature/story/comments/${commentId}`, {
         comment
     }, {
         withCredentials: true,
@@ -85,19 +85,24 @@ export const updateComment = async (storyId: string, commentId: string, comment:
     return response.data;
 }
 
-export const toggleCommentClap = async (storyId: string, commentId: string) => {
-    const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comments/${commentId}/clap`, {
-        withCredentials: true,
-        headers: {
-        'Content-Type': 'application/json',
+export const toggleCommentClap = async (commentId: string) => {
+    try{
+        const response = await axios.post(`${BACKEND_URL}/api/feature/story/comment/${commentId}/clap`,{}, {
+            withCredentials: true,
+            headers: {
+            'Content-Type': 'application/json',
+            }
+        });
+        return response.data;
+    }catch(error){
+        console.error("Error toggling comment clap", error);
+        throw error;
     }
-});
-return response.data;
 }
 
 export const getBatchCommentClapData = async (storyId: string, commentId: string[]) => {
     try {
-        const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comments/clap`, {
+        const response = await axios.post(`${BACKEND_URL}/api/feature/story/${storyId}/comment/clap`, {
             commentIds: commentId
         }, {
             withCredentials: true,
@@ -166,6 +171,18 @@ export const getUserBookmarks = async () => {
         return response.data;
     }
     catch (error) {
+        console.error("Error fetching bookmarks", error);
+        throw error;
+    }
+}
+
+export const getStoryBookmarks = async (storyId: string) => {
+    try {
+        const response = await axios.get(`${BACKEND_URL}/api/feature/story/${storyId}/bookmarks`, {
+            withCredentials: true,
+        });
+        return response.data;   
+    } catch (error) {
         console.error("Error fetching bookmarks", error);
         throw error;
     }

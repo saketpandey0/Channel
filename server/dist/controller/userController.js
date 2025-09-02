@@ -141,6 +141,7 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             user: {
                 id: user.id,
                 name: user.name,
+                username: user.username,
                 email: user.email,
                 role: user.role || 'READER'
             },

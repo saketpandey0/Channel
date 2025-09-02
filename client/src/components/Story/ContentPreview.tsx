@@ -1,4 +1,4 @@
-import { NestedComments } from "./NestedComments";
+import NestedComments from "./NestedComments";
 import type React from "react";
 import { useEffect } from "react";
 import { motion } from "motion/react";
@@ -21,7 +21,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
-  const { bookmarked } = useBookmarks(story.author.id, story.id, false);
+  const { bookmarked, bookmarkCount, handleBookmark } = useBookmarks(story.id);
   
   useEffect(() => {
     if (isOpen) {
@@ -95,7 +95,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50"
+      className="fixed inset-0 z-50 "
       onWheel={handleWheel}
       onTouchMove={handleTouchMove}
     >
@@ -119,7 +119,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-48px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-48px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-900 backdrop-blur-sm"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -131,7 +131,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           }}
         >
           <div className="mb-8">
-            <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 sm:text-3xl md:text-4xl">
+            <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 sm:text-3xl md:text-4xl dark:text-gray-200">
               {story.title}
             </h1>
 
@@ -139,7 +139,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
               {story.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600"
+                  className="rounded-full bg-blue-50 dark:bg-black px-3 py-1 text-sm font-medium text-blue-600"
                 >
                   {tag}
                 </span>
@@ -156,7 +156,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
               className="h-10 w-10 rounded-full object-cover"
             />
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-200">
                 {story.author.name}
               </h3>
               <p className="text-sm text-gray-500">@{story.author.username}</p>
@@ -166,10 +166,10 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           <div className="mb-8 flex flex-col justify-between gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-center">
             <div className="flex items-center gap-6">
               <ClapButton story={story} storyId={story.id}  />
-              <button className="flex items-center gap-2 text-gray-600 transition-colors hover:text-blue-500 cursor-pointer" 
+              <button className="flex items-center gap-2 text-gray-600 transition-colors cursor-pointer" 
                 onClick={() => {document.getElementById("comments")?.scrollIntoView({ behavior: "smooth" });
               }}>
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-5 w-5 hover:text-blue-500" />
                 <span>{story.comments > 0 ? story.comments : "0"}</span>
               </button>
               <div className="flex items-center gap-1 text-gray-500">
@@ -181,7 +181,9 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="rounded-full p-2 transition-colors hover:bg-gray-100">
+              <button className="rounded-full p-2 transition-colors hover:bg-gray-100"
+                onClick={()=>handleBookmark(story.id)}
+              >
                 <Bookmark
                   className={`h-5 w-5 ${
                     bookmarked ? "text-blue-600" : "text-gray-400"

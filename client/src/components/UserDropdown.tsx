@@ -142,14 +142,14 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose, ava
     return (
         <div
             ref={dropdownRef}
-            className="absolute top-14 right-0 w-60 bg-white rounded-xl m-1 shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 right-0 w-60 bg-white dark:bg-zinc-900 rounded-xl m-1 shadow-2xl border border-gray-100 dark: border-gray-700 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200"
         >
             <div className="flex flex-col gap-1.5 pt-4">
                 {menuItems.map((item, index) => (
                     <Link 
                         to={item.pageLink}
                         key={index}
-                        className="flex items-center text-gray-500 font-normal cursor-pointer py-2 hover:text-black/70 transition-colors"
+                        className="flex items-center text-gray-500 font-normal dark:hover:text-white cursor-pointer py-2 hover:text-black/70 transition-colors"
                         onClick={onClose}
                     >
                         <div className="flex justify-start pl-6 text-xl">{item.icon}</div>
@@ -165,7 +165,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose, ava
                     <Link 
                         to={item.pageLink}
                         key={index}
-                        className="flex items-center text-gray-500 font-normal cursor-pointer py-2 hover:text-black/70 transition-colors"
+                        className="flex items-center text-gray-500 font-normal cursor-pointer py-2 dark:hover:text-white hover:text-black/70 transition-colors"
                         onClick={onClose}
                     >
                         <span className="pl-6 text-base">{item.name}</span>
@@ -180,7 +180,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose, ava
                     <Link 
                         to={item.pageLink}
                         key={index}
-                        className="flex items-center justify-between text-gray-500 font-normal cursor-pointer py-2 hover:text-black/70 transition-colors"
+                        className="flex items-center justify-between text-gray-500 dark:hover:text-white font-normal cursor-pointer py-2 hover:text-black/70 transition-colors"
                         onClick={onClose}
                     >
                         <span className="pl-6">{item.name}</span>
@@ -196,7 +196,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ isOpen, onClose, ava
             <div className="flex flex-col justify-start items-start pb-4">
                 <button 
                     onClick={handleSignOut} 
-                    className="cursor-pointer text-base text-gray-500 hover:text-black/70 pl-6 py-1 transition-colors"
+                    className="cursor-pointer text-base text-gray-500 hover:text-black/70 dark:hover:text-white pl-6 py-1 transition-colors"
                 >
                     Sign out
                 </button>
