@@ -59,7 +59,6 @@ export default function Features() {
             </div>
           </section>
 
-          {/* Analytics */}
           <section>
             <div className="text-center mb-12">
               <BarChart3 className="w-12 h-12 text-green-600 mx-auto mb-4" />
@@ -308,7 +307,6 @@ export default function Features() {
             </div>
           </div>
 
-          {/* Bottom Bar */}
           <div className="mt-8 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-600">© 2024 Feather. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
