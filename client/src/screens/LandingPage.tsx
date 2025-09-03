@@ -32,7 +32,7 @@ export function LandingPage() {
         </CardDescription>
       </motion.div>
       <Spotlight className="top-40 left-0 md:left-60 md:-top-20 -z-10" fill="blue" />
-      <Feautres></Feautres>
+      {/* <Feautres></Feautres> */}
     </Card>
   );
 }

@@ -933,20 +933,23 @@ const getStoryBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }
-        const bookmarks = yield db_1.default.bookmark.findMany({
-            where: {
-                userId, storyId: id
-            },
-            select: { storyId: true }
+        const bookmarkCount = yield db_1.default.bookmark.count({
+            where: { storyId: id },
         });
-        const response = bookmarks.reduce((acc, bookmark) => {
-            acc[bookmark.storyId] = true;
-            return acc;
-        }, {});
-        return res.status(200).json(response);
+        const userBookmark = yield db_1.default.bookmark.findFirst({
+            where: {
+                userId,
+                storyId: id,
+            },
+        });
+        return res.status(200).json({
+            storyId: id,
+            bookmarked: !!userBookmark,
+            bookmarkCount,
+        });
     }
     catch (error) {
-        console.error('Get bookmarks error:', error);
+        console.error("Get bookmarks error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -960,16 +963,60 @@ const getUserBookmarks = (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
         const bookmarks = yield db_1.default.bookmark.findMany({
             where: { userId },
-            select: { storyId: true }
+            include: {
+                story: {
+                    include: {
+                        media: true,
+                        author: {
+                            select: {
+                                id: true,
+                                username: true,
+                                name: true,
+                                avatar: true,
+                                bio: true,
+                                isVerified: true,
+                            },
+                        },
+                        publication: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                                logo: true,
+                                description: true,
+                            },
+                        },
+                        tags: {
+                            include: {
+                                tag: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        slug: true,
+                                    },
+                                },
+                            },
+                        },
+                        _count: {
+                            select: {
+                                claps: true,
+                                comments: true,
+                                bookmarks: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
         });
-        const response = bookmarks.reduce((acc, bookmark) => {
-            acc[bookmark.storyId] = true;
-            return acc;
-        }, {});
-        return res.status(200).json(response);
+        const stories = bookmarks.map((b) => {
+            const s = b.story;
+            return Object.assign(Object.assign({}, s), { claps: s._count.claps, comments: s._count.comments, bookmarkCount: s._count.bookmarks, tags: s.tags.map((t) => t.tag.name), createdAt: b.createdAt });
+        });
+        return res.status(200).json(stories);
     }
     catch (error) {
-        console.error('Get bookmarks error:', error);
+        console.error("Get bookmarks error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });

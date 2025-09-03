@@ -8,7 +8,6 @@ import { ClapButton } from "./ClapButton";
 import { useNavigate } from "react-router-dom";
 import { useBookmarks } from "../../hooks/useBookmarks";
 
-
 interface ContentPreviewProps {
   story: Story;
   isOpen: boolean;
@@ -22,7 +21,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { bookmarked, bookmarkCount, handleBookmark } = useBookmarks(story.id);
-  
+
   useEffect(() => {
     if (isOpen) {
       const scrollY = window.scrollY;
@@ -49,8 +48,6 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       };
     }
   }, [isOpen]);
-
-  
 
   if (!isOpen) return null;
 
@@ -88,14 +85,13 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
     e.stopPropagation();
   };
 
-
   const handleTouchMove = (e: React.TouchEvent) => {
     e.stopPropagation();
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 "
+      className="fixed inset-0 z-50"
       onWheel={handleWheel}
       onTouchMove={handleTouchMove}
     >
@@ -119,7 +115,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-48px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-900 backdrop-blur-sm"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(100vh-48px)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl backdrop-blur-sm dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -139,7 +135,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
               {story.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="rounded-full bg-blue-50 dark:bg-black px-3 py-1 text-sm font-medium text-blue-600"
+                  className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600 dark:bg-black"
                 >
                   {tag}
                 </span>
@@ -147,7 +143,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             </div>
           </div>
 
-          <div className="mb-6 flex items-center gap-3 cursor-pointer"
+          <div
+            className="mb-6 flex cursor-pointer items-center gap-3"
             onClick={handleNavigate}
           >
             <img
@@ -165,10 +162,15 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 
           <div className="mb-8 flex flex-col justify-between gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-center">
             <div className="flex items-center gap-6">
-              <ClapButton story={story} storyId={story.id}  />
-              <button className="flex items-center gap-2 text-gray-600 transition-colors cursor-pointer" 
-                onClick={() => {document.getElementById("comments")?.scrollIntoView({ behavior: "smooth" });
-              }}>
+              <ClapButton story={story} storyId={story.id} />
+              <button
+                className="flex cursor-pointer items-center gap-2 text-gray-600 transition-colors"
+                onClick={() => {
+                  document
+                    .getElementById("comments")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
                 <MessageCircle className="h-5 w-5 hover:text-blue-500" />
                 <span>{story.comments > 0 ? story.comments : "0"}</span>
               </button>
@@ -181,14 +183,18 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="rounded-full p-2 transition-colors hover:bg-gray-100"
-                onClick={()=>handleBookmark(story.id)}
+              <button
+                className="flex cursor-pointer items-center gap-2 text-gray-600 transition-colors"
+                onClick={() => handleBookmark(story.id)}
               >
                 <Bookmark
                   className={`h-5 w-5 ${
                     bookmarked ? "text-blue-600" : "text-gray-400"
                   }`}
                 />
+                <span className="text-xs">
+                  {bookmarkCount > 0 ? bookmarkCount : ""}
+                </span>
               </button>
               <button className="rounded-full p-2 transition-colors hover:bg-gray-100">
                 <Share className="h-5 w-5 text-gray-400 hover:text-blue-600" />

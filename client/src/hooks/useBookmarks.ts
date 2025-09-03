@@ -4,38 +4,35 @@ import { useCallback, useEffect, useState } from 'react';
 
 
 
-
 export const useBookmarks = (storyId: string) => {
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
 
-  const fetchStoryBookmarks = useCallback( async ()=> {
-    try{
+  const fetchStoryBookmarks = useCallback(async () => {
+    try {
       const data = await getStoryBookmarks(storyId);
       setBookmarked(data.bookmarked);
       setBookmarkCount(data.bookmarkCount);
-    }catch(err){
+    } catch(err) {
       console.error("Error fetching bookmarks", err);
     }
-  },[]);
-  
-  useEffect(()=> {
+  }, [storyId]); 
+
+  useEffect(() => {
     fetchStoryBookmarks();
-  }, [storyId])
+  }, [storyId, fetchStoryBookmarks]); 
 
-
-  const handleBookmark = useCallback(async (storyId: string)=> {
+  const handleBookmark = useCallback(async (storyId: string) => {
     try {
       const data = await toogleBookmark(storyId);
-      setBookmarked(data.bookmarkCount);
-      setBookmarkCount( prev => data.bookmarked ? prev + 1 : Math.max(prev - 1, 0));
-    }catch(err){
+      console.log(data.bookmarkCount);
+      setBookmarked(data.bookmarked); 
+      setBookmarkCount(prev => data.bookmarked ? prev + 1 : Math.max(prev - 1, 0));
+    } catch(err) {
       console.error("Error toggling bookmark", err);
     }
-  },[storyId]);
-
+  }, [storyId]);
+  console.log("bookmarked", bookmarked);
+  console.log("bookmarkCount", bookmarkCount);
   return { bookmarked, bookmarkCount, handleBookmark };
-}
-
-
-
+};

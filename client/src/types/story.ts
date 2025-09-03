@@ -25,12 +25,6 @@ export type Story = {
   tags: string[]
 }
 
-// interface AuthorParams {
-//   id: string
-//   name: string
-//   username: string
-//   avatar: string
-// }
 
 export type StoryParams = {
   page?: number

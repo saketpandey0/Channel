@@ -33,35 +33,6 @@ export const StoriesLayout = () => {
 
   const blogPosts = stories || [];
 
-  // Add sample story with fixed username
-  // blogPosts.push({
-  //   id: "sample-1",
-  //   title: "Building Scalable Web Applications with Modern React Patterns",
-  //   excerpt:
-  //     "Explore advanced React patterns including compound components, render props, and custom hooks to build maintainable and scalable applications. Learn how to structure your codebase for long-term success.",
-  //   content: "",
-  //   coverImage:
-  //     "https://images.pexels.com/photos/11035380/pexels-photo-11035380.jpeg?auto=compress&cs=tinysrgb&w=400",
-  //   isPublic: true,
-  //   isPremium: false,
-  //   allowComments: true,
-  //   allowClaps: true,
-  //   createdAt: new Date().toISOString(),
-  //   updatedAt: new Date().toISOString(),
-  //   author: {
-  //     id: "1",
-  //     name: "Sarah Chen",
-  //     username: "sarahchen", // Fixed typo
-  //     avatar:
-  //       "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150",
-  //   },
-  //   readTime: "8 min read",
-  //   publishedAt: "2 days ago",
-  //   claps: 234,
-  //   comments: 42,
-  //   tags: ["React", "Web Development", "Architecture"],
-  // });
-
   const handleStoryClick = (story: Story) => {
     setSelectedStory(story);
   };
