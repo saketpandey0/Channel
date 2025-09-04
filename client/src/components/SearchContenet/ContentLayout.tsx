@@ -1,7 +1,13 @@
 import type { TabType, SearchResults, StoryPost, Publication, Person, Topic } from "../../types/searchResult";
-import {motion} from "motion/react";
 import { Search } from "lucide-react";
-
+import StoryCard from "./cards/StoryCard";
+import PersonCard from "./cards/PersonCard";
+import PublicationCard from "./cards/PublicationCard";
+import TopicCard from "./cards/TopicCard";
+import ContentPreview from "../Story/ContentPreview";
+import type { Story } from "../../types/story";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ContentLayout: React.FC<{
   activeTab: TabType;
@@ -9,168 +15,47 @@ const ContentLayout: React.FC<{
   isLoading: boolean;
   searchQuery: string;
 }> = ({ activeTab, searchResults, isLoading, searchQuery }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const navigate = useNavigate();
+
+  const handleStoryClick = (story: StoryPost) => {
+    const storyForPreview: Story = {
+      id: story.id,
+      title: story.title,
+      excerpt: story.excerpt,
+      content: story.content, 
+      coverImage: story.image,
+      author: story.author,
+      tags: story.tags,
+      publishedAt: story.publishedAt,
+      readTime: `${story.readTime} min read`,
+      claps: 0, 
+      comments: 0,
+      bookmarks: 0,
+      slug: story.slug,
+      isPublic: story.isPublic,
+      isPremium: story.isPremium,
+      allowComments: story.allowComments,
+      allowClaps: story.allowClaps,
+    };
+    setSelectedStory(storyForPreview);
   };
 
-  const renderStoryItem = (story: StoryPost, index: number) => (
-    <motion.div
-      key={story.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => window.open(`/story/${story.slug}`, "_blank")}
-    >
-      <div className="flex gap-4">
-        {story.image && (
-          <div className="flex-shrink-0">
-            <img
-              src={story.image}
-              alt={story.title}
-              className="w-32 h-24 object-cover rounded-lg"
-            />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-            {story.title}
-          </h2>
-          <p className="text-gray-600 mb-3 line-clamp-2">
-            {story.excerpt}
-          </p>
-          <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
-            {story.author.avatar && (
-              <img
-                src={story.author.avatar}
-                alt={story.author.name}
-                className="w-6 h-6 rounded-full"
-              />
-            )}
-            <span className="font-medium">{story.author.name}</span>
-            <span>·</span>
-            <span>{formatDate(story.publishedAt)}</span>
-            <span>·</span>
-            <span>{story.readTime} min read</span>
-          </div>
-          {story.tags.length > 0 && (
-            <div className="flex gap-2">
-              {story.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
+  const handlePersonClick = (person: Person) => {
+    navigate(`/${person.username}/about`);
+  };
 
-  const renderPersonItem = (person: Person, index: number) => (
-    <motion.div
-      key={person.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => window.open(`/user/${person.username}`, "_blank")}
-    >
-      <div className="flex gap-4">
-        {person.avatar && (
-          <img
-            src={person.avatar}
-            alt={person.name}
-            className="w-16 h-16 rounded-full object-cover flex-shrink-0"
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {person.name}
-            </h2>
-            {person.isVerified && (
-              <span className="text-blue-500 text-xl">✓</span>
-            )}
-          </div>
-          <p className="text-gray-500 mb-2">@{person.username}</p>
-          {person.bio && (
-            <p className="text-gray-600 mb-3">
-              {person.bio}
-            </p>
-          )}
-          <p className="text-sm text-gray-500">
-            {person.followerCount.toLocaleString()} followers
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
+  const handlePublicationClick = (publication: Publication) => {
+    navigate(`/publication/${publication.slug}`);
+  };
 
-  const renderPublicationItem = (publication: Publication, index: number) => (
-    <motion.div
-      key={publication.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => window.open(`/publication/${publication.slug}`, "_blank")}
-    >
-      <div className="flex gap-4">
-        {publication.image && (
-          <img
-            src={publication.image}
-            alt={publication.name}
-            className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            {publication.name}
-          </h2>
-          {publication.description && (
-            <p className="text-gray-600 mb-3">
-              {publication.description}
-            </p>
-          )}
-          <p className="text-sm text-gray-500">
-            {publication.followerCount.toLocaleString()} followers
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
+  const handleTopicClick = (topic: Topic) => {
+    navigate(`/result/${topic.name}/topic`);
+  };
 
-  const renderTopicItem = (topic: Topic, index: number) => (
-    <motion.div
-      key={topic.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => window.open(`/topic/${topic.name}`, "_blank")}
-    >
-      <div className="flex-1">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          {topic.name}
-        </h2>
-        {topic.description && (
-          <p className="text-gray-600 mb-3">
-            {topic.description}
-          </p>
-        )}
-        <p className="text-sm text-gray-500">
-          {topic.storyCount.toLocaleString()} stories
-        </p>
-      </div>
-    </motion.div>
-  );
+  const handleClosePreview = () => {
+    setSelectedStory(null);
+  };
 
   if (isLoading) {
     return (
@@ -199,16 +84,69 @@ const ContentLayout: React.FC<{
   }
 
   return (
-    <div className="flex-1 p-6">
-      <div className="space-y-4">
-        {activeTab === 'stories' && searchResults.stories.map(renderStoryItem)}
-        {activeTab === 'people' && searchResults.people.map(renderPersonItem)}
-        {activeTab === 'publications' && searchResults.publications.map(renderPublicationItem)}
-        {activeTab === 'topics' && searchResults.topics.map(renderTopicItem)}
+    <>
+      <div className="flex-1 p-6">
+        <div className="space-y-4">
+          {activeTab === 'stories' && 
+            searchResults.stories.map((story, index) => (
+              <StoryCard 
+                key={story.id}
+                story={story}
+                index={index}
+                variant="detailed"
+                onClick={handleStoryClick}
+              />
+            ))
+          }
+          
+          {activeTab === 'people' && 
+            searchResults.people.map((person, index) => (
+              <PersonCard 
+                key={person.id}
+                person={person}
+                index={index}
+                variant="detailed"
+                onClick={handlePersonClick}
+              />
+            ))
+          }
+          
+          {activeTab === 'publications' && 
+            searchResults.publications.map((publication, index) => (
+              <PublicationCard 
+                key={publication.id}
+                publication={publication}
+                index={index}
+                variant="detailed"
+                onClick={handlePublicationClick}
+              />
+            ))
+          }
+          
+          {activeTab === 'topics' && 
+            searchResults.topics.map((topic, index) => (
+              <TopicCard 
+                key={topic.id}
+                topic={topic}
+                index={index}
+                variant="detailed"
+                onClick={handleTopicClick}
+              />
+            ))
+          }
+        </div>
       </div>
-    </div>
+
+      {/* Content Preview for Stories */}
+      {selectedStory && (
+        <ContentPreview 
+          story={selectedStory}  
+          isOpen={!!selectedStory}
+          onClose={handleClosePreview} 
+        />
+      )}
+    </>
   );
 };
-
 
 export default ContentLayout;

@@ -1,29 +1,32 @@
 import { useState } from "react";
-const translate = require("@vitalets/google-translate-api");
-
-
+import { translateWithMyMemory } from "../services/contentService";
 
 const useTranslation = () => {
-    const [isTranslating, setIsTranslating] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const translateText = async (text: string, targetLang: string) => {
-        setIsTranslating(true);
-        setError(null);
-        try {
-            const res = await translate(text, { to: targetLang });
-            setIsTranslating(false);
-            return res.text;
-        } catch (err: any) {
-            setIsTranslating(false);
-            setError(err.message || "Translation failed");
-            return text;
-        } finally {
-            setIsTranslating(false);
-        }
-    };
+  const translateText = async (
+    title: string,
+    content: string,
+    targetLang: string
+  ) => {
+    setIsTranslating(true);
+    setError(null);
 
-    return {isTranslating, error, translateText};
-}
+    try {
+      const translatedTitle = await translateWithMyMemory(title, targetLang);
+      const translatedContent = await translateWithMyMemory(content, targetLang);
+
+      setIsTranslating(false);
+      return { title: translatedTitle, content: translatedContent };
+    } catch (err: any) {
+      setIsTranslating(false);
+      setError(err.message || "Translation failed");
+      return { title, content };
+    }
+  };
+
+  return { isTranslating, error, translateText };
+};
 
 export default useTranslation;

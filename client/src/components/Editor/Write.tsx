@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { StoryData } from "./types";
 import Editor from './Editor';
 import PublishStory from './PublishStory';
-import { createStory, updateStory } from "../../api/storyService";
+import { createStory, updateStory } from "../../services/storyService";
 import { useNavigate } from "react-router-dom";
 
 export const Write = () => {

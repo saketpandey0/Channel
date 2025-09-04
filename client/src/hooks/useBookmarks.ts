@@ -1,4 +1,4 @@
-import { getStoryBookmarks, toogleBookmark } from '../api/featureServices';
+import { getStoryBookmarks, toogleBookmark } from '../services/featureServices';
 import { useCallback, useEffect, useState } from 'react';
 
 

@@ -6,23 +6,29 @@ export type Author = {
 }
 
 export type Story = {
-  id: string
-  title: string
-  excerpt: string
-  content: string
-  coverImage: string
-  isPublic: boolean
-  isPremium: boolean
-  allowComments: boolean
-  allowClaps: boolean
-  createdAt: string
-  updatedAt: string
-  author: Author
-  readTime: string
-  publishedAt: string
-  claps: number
-  comments: number
-  tags: string[]
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+    username: string;
+  };
+  coverImage?: string;
+  publishedAt: string;
+  readTime: string;
+  claps: number;
+  comments: number;
+  bookmarks: number;
+  tags: string[];
+  image?: string;
+  slug: string;
+  isPublic: boolean;
+  isPremium: boolean;
+  allowComments: boolean;
+  allowClaps: boolean;
 }
 
 

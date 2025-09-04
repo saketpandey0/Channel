@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, Button, Avatar, Input, Textarea } from "../Shad";
 import { useState, useEffect } from "react";
 import { X, Upload, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { editProfile, checkUsernameAvailability } from "../../api/authService";
+import { editProfile, checkUsernameAvailability } from "../../services/authService";
 
 interface UpdateProfileForm {
   isOpen: boolean;

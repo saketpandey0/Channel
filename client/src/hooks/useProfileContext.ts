@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { ProfileUser, ProfileViewContext } from '../types/profile';
-import { getUserFollowData } from '../api/featureServices';
-import { fetchUserProfile } from '../api/authService';
+import { getUserFollowData } from '../services/featureServices';
+import { fetchUserProfile } from '../services/authService';
 
 export const useProfileContext = (profileUsername: string) => {
   const { useCurrentUser } = useAuth();

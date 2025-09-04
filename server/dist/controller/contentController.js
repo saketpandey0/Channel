@@ -12,13 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reportStory = exports.getRelatedStories = exports.getMedia = exports.uploadVideo = exports.uploadImage = void 0;
+exports.translateStory = exports.reportStory = exports.getRelatedStories = exports.getMedia = exports.uploadVideo = exports.uploadImage = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = require("fs");
 const promises_1 = __importDefault(require("fs/promises"));
 const db_1 = __importDefault(require("../db"));
 const redisCache_1 = require("../cache/redisCache");
+const google_translate_api_1 = require("@vitalets/google-translate-api");
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = file.mimetype.startsWith('image/') ? 'uploads/images/' : 'uploads/videos/';
@@ -197,7 +198,7 @@ const getRelatedStories = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (!story) {
             return res.status(404).json({ error: "Story not found" });
         }
-        const tagIds = story.tags.map(st => st.tagId);
+        const tagIds = story.tags.map((st) => st.tagId);
         const relatedStories = yield db_1.default.story.findMany({
             where: {
                 AND: [
@@ -311,3 +312,24 @@ const reportStory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.reportStory = reportStory;
+const translateStory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { title, content, targetLang } = req.body;
+        if (!title || !content || !targetLang) {
+            return res.status(400).json({ error: "Missing fields" });
+        }
+        const [titleRes, contentRes] = yield Promise.all([
+            (0, google_translate_api_1.translate)(title, { to: targetLang }),
+            (0, google_translate_api_1.translate)(content, { to: targetLang }),
+        ]);
+        return res.json({
+            translatedTitle: titleRes.text,
+            translatedContent: contentRes.text,
+        });
+    }
+    catch (error) {
+        console.error("Translation error:", error);
+        res.status(500).json({ error: "Translation failed" });
+    }
+});
+exports.translateStory = translateStory;

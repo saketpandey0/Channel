@@ -13,7 +13,7 @@ router.get('/getstory/:id', getStory);
 router.delete('/delete/:id', deleteStory);
 router.put('/update/story/:id', updateStory);
 router.get('/getfeed', getFeed);
-router.get('/gettrendingstories', getTrendingStories);
+router.get('/trending/stories', getTrendingStories);
 router.post('/publish/:id', publishStory);
 router.post('/unpublish/:id', unpublishStory);
 router.get('/drafts', getUserDrafts);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {useClapContext} from '../context/ClapContext';
-import { getStoryClapData, toggleStoryClap } from '../api/featureServices';
+import { getStoryClapData, toggleStoryClap } from '../services/featureServices';
 
 export const useClapData = ({storyId}: {storyId: string}) => {
     const { claps, dispatch } = useClapContext();

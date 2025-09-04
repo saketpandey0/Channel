@@ -1,10 +1,9 @@
-// src/admin/components/analytics/AnalyticsDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { Download, BarChart3, TrendingUp, Calendar } from 'lucide-react';
-import StatCard from '../common/StatCard';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { AnalyticsService } from '../../services';
-import { Analytics, AdvancedAnalytics } from '../../types';
+import StatCard from '../StatCard';
+import LoadingSpinner from '../LoadingSkeleton';
+import { AnalyticsService } from '../../../services/adminservice';
+import type { Analytics, AdvancedAnalytics } from '../../../types/admin';
 
 const AnalyticsDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -52,21 +51,21 @@ const AnalyticsDashboard: React.FC = () => {
     fetchAnalytics();
   }, [timeframe]);
 
-  const handleExportReport = async () => {
-    try {
-      const blob = await AnalyticsService.exportAnalyticsReport(timeframe, 'csv');
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `analytics-report-${timeframe}-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error: any) {
-      alert('Failed to export report');
-    }
-  };
+  // const handleExportReport = async () => {
+  //   try {
+  //     const blob = await AnalyticsService.exportAnalyticsReport(timeframe, 'csv');
+  //     const url = window.URL.createObjectURL(blob);
+  //     const a = document.createElement('a');
+  //     a.href = url;
+  //     a.download = `analytics-report-${timeframe}-${new Date().toISOString().split('T')[0]}.csv`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     window.URL.revokeObjectURL(url);
+  //     document.body.removeChild(a);
+  //   } catch (error: any) {
+  //     alert('Failed to export report');
+  //   }
+  // };
 
   if (loading) {
     return <LoadingSpinner message="Loading analytics..." />;
@@ -102,13 +101,13 @@ const AnalyticsDashboard: React.FC = () => {
               </option>
             ))}
           </select>
-          <button 
+          {/* <button 
             onClick={handleExportReport}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
             <Download className="h-4 w-4 mr-2" />
             Export Report
-          </button>
+          </button> */}
         </div>
       </div>
 

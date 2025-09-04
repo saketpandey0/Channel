@@ -192,7 +192,6 @@ model Publication {
   logo        String?
   coverImage  String?
 
-  // Owner & Management
   ownerId String
   owner   User   @relation("PublicationOwner", fields: [ownerId], references: [id])
 

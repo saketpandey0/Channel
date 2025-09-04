@@ -8,4 +8,5 @@ router.post('/upload/:id/video', contentController_1.uploadVideo);
 router.get('/media/:id', contentController_1.getMedia);
 router.get('/stories/related/:id', contentController_1.getRelatedStories);
 router.post('/stories/:id/report', contentController_1.reportStory);
+router.post('/translate', contentController_1.translateStory);
 exports.default = router;

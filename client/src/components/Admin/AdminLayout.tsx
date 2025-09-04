@@ -1,8 +1,7 @@
-// src/admin/components/layout/AdminLayout.tsx
 import React, { useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
-import { getAdminDashboard, getCurrentAdmin } from '../../api/adminservice';
+import { getAdminDashboard, getCurrentAdmin } from '../../services/adminservice';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -16,6 +15,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   onTabChange 
 }) => {
     const [pendingReportsCount, setPendingReportsCount] = useState(0);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const [adminUser, setAdminUser] = useState({
         name: 'Admin User',
@@ -52,17 +52,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader 
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         adminUser={adminUser}
-        onLogout={handleLogout}
-        notificationCount={pendingReportsCount}
       />
       
       <div className="flex">
-        <AdminSidebar 
+        {sidebarOpen && <AdminSidebar 
           activeTab={activeTab}
           onTabChange={onTabChange}
           pendingReportsCount={pendingReportsCount}
-        />
+        />}
         
         <main className="flex-1 overflow-auto">
           <div className="p-8">

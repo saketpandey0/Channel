@@ -1,4 +1,3 @@
-// src/admin/components/common/Pagination.tsx
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 

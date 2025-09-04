@@ -5,14 +5,13 @@ import {
   useScroll,
 } from "motion/react";
 import { ContentSearch } from "./SearchContenet/ContentSearch";
-// import { Avatar } from "./Avatar";
 import { useRef, useState, useEffect } from "react";
 import { UserDropdown } from "./UserDropdown";
 import { SquarePen, BellRing, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ModeToggle } from "./mode-toggle";
 import { useNavigate } from "react-router-dom";
-import { Avatar } from "./Shad";
+import { Avatar, Button } from "./Shad";
 
 export const Appbar = () => {
   const { useCurrentUser } = useAuth();
@@ -48,6 +47,15 @@ export const Appbar = () => {
     }
   });
 
+  const handleAdminDashboard = () => {
+    console.log("admin role checking", user.role);
+    if(user?.role === 'ADMIN') {
+      navigate(`/admin`);
+    }else {
+      navigate(`/`);
+    }
+  }
+
   return (
     <motion.nav
       className="sticky mx-auto wrapper top-0 z-30 pt-6 flex items-center gap-0 w-[calc(100%-20px)] px-4"
@@ -57,7 +65,7 @@ export const Appbar = () => {
       transition={{ duration: 0.3, ease: "linear" }}
     >
       <div className="bg-secondary/15 border-primary/10 mx-auto flex w-full justify-between rounded-4xl border p-2 shadow-lg shadow-neutral-600/5 backdrop-blur-lg">
-        <Link to={"/"} className="flex cursor-pointer items-center gap-1">
+        <Button onClick={handleAdminDashboard} className="flex cursor-pointer items-center gap-2">
           <motion.img
             whileHover={{
               rotate: [0, -5, 5, -5, 5, 0],
@@ -79,7 +87,7 @@ export const Appbar = () => {
           <span className="text-foreground font-Bodoni hidden text-lg font-bold tracking-tight text-shadow-lg hover:text-shadow-lg/20 md:block md:text-2xl">
             Channel
           </span>
-        </Link>
+        </Button>
         <div className="flex items-center gap-8">
           <ContentSearch />
           <ModeToggle></ModeToggle>

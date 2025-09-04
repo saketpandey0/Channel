@@ -12,6 +12,8 @@ export const toggleClapStory = async (req: Request, res: Response): Promise<any>
     try {
         const { id } = req.params;
         const userId = req.session?.user?.userId || req.user?.userId;
+        console.log("passport", req.user);
+        console.log("userId", userId);
 
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });

@@ -21,6 +21,8 @@ const toggleClapStory = (req, res) => __awaiter(void 0, void 0, void 0, function
     try {
         const { id } = req.params;
         const userId = ((_b = (_a = req.session) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.user) === null || _c === void 0 ? void 0 : _c.userId);
+        console.log("passport", req.user);
+        console.log("userId", userId);
         if (!userId) {
             return res.status(401).json({ error: "Unauthorized Access" });
         }

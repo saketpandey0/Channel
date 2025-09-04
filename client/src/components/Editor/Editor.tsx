@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { uploadImageService, uploadVideoService } from "../../api/contentService";
-import { createStory, updateStory } from "../../api/storyService";
+import { uploadImageService, uploadVideoService } from "../../services/contentService";
+import { createStory, updateStory } from "../../services/storyService";
 import type { MediaItem, StoryData, EditorProps } from "./types";
 import Toolbar from "./Toolbar";
 import LinkModal, { getYouTubeEmbedUrl } from "./Modals/LinkModal";

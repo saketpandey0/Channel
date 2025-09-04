@@ -533,7 +533,6 @@ export const getTrendingStories = async (req: Request, res: Response): Promise<a
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        // Try to get from cache first
         const cacheKey = ['trending', page.toString(), limit.toString()];
         const cachedTrending = await cache.get('stories', cacheKey);
         if (cachedTrending) {

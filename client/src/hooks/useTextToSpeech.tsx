@@ -1,37 +1,18 @@
-import { set } from "date-fns";
-import { useEffect, useState } from "react";
+import AudioService from "../services/audioService";
 
+export const useTextToSpeech = () => {
+  const service = AudioService.getInstance();
 
-const useTextToSpeech = () => {
-    const [isSupported, setIsSupported] = useState(false);
-    const [isSpeaking, setIsSpeaking] = useState(false);
-
-    useEffect(()=> {
-        if (typeof window !== "undefined" && "speechSynthesis" in window) {
-            setIsSupported(true);
-        }
-    }, []);
-
-    const speak = (text: string, lang: string = "en-US") => {
-        if(isSupported && text){
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            utterance.onstart = () => setIsSpeaking(true);
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => setIsSpeaking(false);
-            speechSynthesis.speak(utterance);
-        }
-    };
-
-    const stop = () => {
-        if(isSupported){
-            speechSynthesis.cancel();
-            setIsSpeaking(false);
-        }
-    };
-
-    return { isSupported, isSpeaking, speak, stop};
+  return {
+    service,
+    languages: service.languages,
+    speak: service.speak.bind(service),
+    pause: service.pause.bind(service),
+    resume: service.resume.bind(service),
+    stop: service.stop.bind(service),
+    isPlaying: service.isPlaying.bind(service),
+    isPaused: service.isPaused.bind(service),
+    getVoicesForLanguage: service.getVoicesForLanguage.bind(service),
+    onStateChange: service.onStateChange.bind(service),
+  };
 };
-
-
-export default useTextToSpeech;

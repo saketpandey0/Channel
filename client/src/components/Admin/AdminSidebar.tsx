@@ -1,4 +1,3 @@
-// src/admin/components/layout/Sidebar.tsx
 import React from 'react';
 import { 
   BarChart3, 
@@ -6,9 +5,6 @@ import {
   FileText, 
   AlertTriangle, 
   TrendingUp, 
-  Settings,
-  Home,
-  Flag
 } from 'lucide-react';
 import type { AdminTab } from '../../types/admin';
 
@@ -29,22 +25,14 @@ const AdminSidebar: React.FC<SidebarProps> = ({
     { id: 'stories', name: 'Stories', icon: FileText, path: '/admin/stories' },
     { id: 'reports', name: 'Reports', icon: AlertTriangle, path: '/admin/reports' },
     { id: 'analytics', name: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },
-    { id: 'moderation', name: 'Moderation', icon: Flag, path: '/admin/moderation' },
-    { id: 'settings', name: 'Settings', icon: Settings, path: '/admin/settings' },
+    // { id: 'moderation', name: 'Moderation', icon: Flag, path: '/admin/moderation' },
+    // { id: 'settings', name: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 
   return (
     <nav className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r border-gray-200">
       <div className="p-4">
-        {/* Navigation Header */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-2">
-            <Home className="h-5 w-5 text-indigo-600" />
-            <span className="text-sm font-medium text-gray-900">Admin Panel</span>
-          </div>
-        </div>
 
-        {/* Navigation Items */}
         <div className="space-y-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -65,7 +53,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({
                   {tab.name}
                 </div>
                 
-                {/* Show notification badge for reports */}
+                {/* Shows notification badge for reports */}
                 {tab.id === 'reports' && pendingReportsCount > 0 && (
                   <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
                     {pendingReportsCount > 99 ? '99+' : pendingReportsCount}
@@ -76,8 +64,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="bottom-0 pt-4 pb-6 px-4 sm:px-6 bg-white">
           <div className="text-xs text-gray-500 text-center">
             Admin Panel v1.0
           </div>

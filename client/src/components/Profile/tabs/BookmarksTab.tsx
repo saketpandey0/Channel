@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Stories from "../../Story/Stories";
 import type { ProfileViewContext } from "../../../types/profile";
 import { useEffect, useState } from "react";
-import {getUserBookmarks} from "../../../api/featureServices";
+import {getUserBookmarks} from "../../../services/featureServices";
 
 interface BookmarksTabProps {
   storyId: string;

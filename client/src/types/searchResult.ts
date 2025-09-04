@@ -2,16 +2,26 @@ export interface StoryPost {
   id: string;
   title: string;
   excerpt: string;
+  content: string;
   author: {
+    id: string;
     name: string;
     avatar: string;
     username: string;
   };
+  coverImage?: string;
   publishedAt: string;
-  readTime: number;
+  readTime: string;
+  claps: number;
+  comments: number;
+  bookmarks: number;
   tags: string[];
   image?: string;
   slug: string;
+  isPublic: boolean;
+  isPremium: boolean;
+  allowComments: boolean;
+  allowClaps: boolean;
 }
 
 export interface Person {

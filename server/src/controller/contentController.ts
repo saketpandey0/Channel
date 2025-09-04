@@ -5,6 +5,8 @@ import {mkdirSync} from 'fs';
 import fs from 'fs/promises';
 import prisma from "../db"
 import { cache } from '../cache/redisCache';
+import { translate } from '@vitalets/google-translate-api';
+
 
 
 
@@ -198,7 +200,7 @@ export const getRelatedStories = async (req: Request, res: Response): Promise<an
       return res.status(404).json({ error: "Story not found" });
     }
 
-    const tagIds = story.tags.map(st => st.tagId);
+    const tagIds = story.tags.map((st: any) => st.tagId);
 
     const relatedStories = await prisma.story.findMany({
       where: {
@@ -208,7 +210,6 @@ export const getRelatedStories = async (req: Request, res: Response): Promise<an
           { isPublic: true },
           {
             OR: [
-              // for same tags, author, and publication
               { tags: { some: { tagId: { in: tagIds } } } },
               { authorId: story.authorId },
               story.publicationId ? { publicationId: story.publicationId } : {},
@@ -320,3 +321,24 @@ export const reportStory = async (req: Request, res: Response): Promise<any> => 
 }
 
 
+export const translateStory = async (req: Request, res: Response) => {
+  try {
+    const { title, content, targetLang } = req.body;
+    if (!title || !content || !targetLang) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const [titleRes, contentRes] = await Promise.all([
+      translate(title, { to: targetLang }),
+      translate(content, { to: targetLang }),
+    ]);
+
+    return res.json({
+      translatedTitle: titleRes.text,
+      translatedContent: contentRes.text,
+    });
+  } catch (error: any) {
+    console.error("Translation error:", error);
+    res.status(500).json({ error: "Translation failed" });
+  }
+};

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCurrentAdmin ,getAdminUsers, updateUserStatus, deleteUserAccount, getAdminStories, moderateStory, removeStory, getAdminPublications, moderatePublication, getAdminReports, resolveReport, getAdminAnalytics, getSystemHealth, getAdminDashboard, getUserActivityLogs, bulkActionStories, validateStoryModeration, validateUserUpdate, validatePublicationUpdate } from "../controller/adminController";
+import { getCurrentAdmin ,getAdminUsers, updateUserStatus, deleteUserAccount, getAdminStories, moderateStory, removeStory, getAdminPublications, moderatePublication, getAdminReports, resolveReport, getAdminAnalytics, getSystemHealth, getAdminDashboard, getUserActivityLogs, bulkActionStories, validateStoryModeration, validateUserUpdate, validatePublicationUpdate, getAdvancedAnalytics } from "../controller/adminController";
 
 
 
@@ -27,6 +27,7 @@ router.get('/reports', getAdminReports);
 router.put('/reports/:id/resolve', ...resolveReport);
 
 router.get('/analytics', ...getAdminAnalytics);
+router.get('/analytics/advance', ...getAdvancedAnalytics);
 router.get('/system-health', ...getSystemHealth);
 
 

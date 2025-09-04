@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type React from "react";
-import { getCurrentUser } from "../../api/authService";
+import { getCurrentUser } from "../../services/authService";
 
 interface EmailAuthProps {
   authType: "signin" | "signup";
@@ -48,7 +48,7 @@ export const EmailAuth = ({
       }, 
       { onSuccess: () => {
         getCurrentUser().then((user) => {
-          navigate(user ? "/stories" : "/auth");
+          navigate(user ? user.role === "admin" ? "/admin" : "/stories" : "/login");
         });
       }}
     );

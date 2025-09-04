@@ -1,6 +1,6 @@
 import { createContext, useContext,  } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AuthWithEmail, AuthWithProviders, logoutUser, getCurrentUser } from "../api/authService";
+import { AuthWithEmail, AuthWithProviders, logoutUser, getCurrentUser } from "../services/authService";
 
 
 const AuthContext = createContext<any>(null);

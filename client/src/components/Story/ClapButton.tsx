@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   toggleStoryClap,
   getStoryClapData,
-} from "../../api/featureServices";
+} from "../../services/featureServices";
 
 interface ClapButtonProps {
   story: {

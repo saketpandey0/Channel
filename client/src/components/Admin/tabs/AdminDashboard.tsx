@@ -1,12 +1,11 @@
-// src/admin/components/dashboard/DashboardOverview.tsx
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Users, Activity, FileText, AlertTriangle } from 'lucide-react';
-import StatCard from '../common/StatCard';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { DashboardService } from '../../services';
-import { DashboardStats } from '../../types';
+import StatCard from '../StatCard';
+import LoadingSpinner from '../LoadingSkeleton';
+import { getAdminDashboard } from '../../../services/adminservice';  
+import type { DashboardStats } from '../../../types/admin';
 
-const DashboardOverview: React.FC = () => {
+const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +16,7 @@ const DashboardOverview: React.FC = () => {
     setError(null);
     
     try {
-      const result = await DashboardService.getDashboardStats();
+      const result = await getAdminDashboard();
       if (result.success && result.data) {
         setStats(result.data);
         setLastRefresh(new Date());
@@ -113,14 +112,8 @@ const DashboardOverview: React.FC = () => {
           />
         </div>
       )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-600 text-sm">{error}</div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default DashboardOverview;
+export default AdminDashboard;

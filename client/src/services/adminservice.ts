@@ -1,6 +1,6 @@
 import axios from  'axios';
 import { BACKEND_URL } from '../const';
-
+import type { Analytics, AdvancedAnalytics } from '../types/admin';
 
 
 
@@ -171,7 +171,7 @@ export const getAdminReports = async (
     }
 };
 
-export const resolveReport = async (id: string, status: string, action: string) => {
+export const resolveReport = async (id: string, status: "RESOLVED" | "DISMISSED", action?: "DELETE_STORY" | "DELETE_COMMENT" | "SUSPEND_USER") => {
     try {
         const response = await axios.put(`${BACKEND_URL}/api/admin/reports/${id}/resolve`, {
             status,
@@ -186,22 +186,6 @@ export const resolveReport = async (id: string, status: string, action: string) 
     }
 };
 
-export const getAdminAnalytics = async (
-  page: number,
-  limit: number,
-  timeframe?: string
-) => {
-    try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/admin/analytics?page=${page}&limit=${limit}&timeframe=${timeframe || ""}`,
-          { withCredentials: true }
-        );
-        return response.data;
-    }catch(error){
-        console.error("Error fetching admin analytics", error);
-        throw error;
-    }
-};
 
 export const getSystemHealth = async () => {
     try {
@@ -219,9 +203,8 @@ export const getSystemHealth = async () => {
 
 export const getAdminDashboard = async () => {
     try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/admin/dashboard}`,
-          { withCredentials: true }
+        const response = await axios.get(`${BACKEND_URL}/api/admin/dashboard}`, {
+            withCredentials: true }
         );
         return response.data;
     }catch(error){
@@ -244,3 +227,26 @@ export const getUserActivityLogs = async (userId: string, page: number, limit: n
     }
 };
 
+
+export const AnalyticsService = {
+    async getAnalytics(): Promise<{ success: boolean; data?: Analytics; error?: string }> {
+        try {
+        const res = await axios.get(`${BACKEND_URL}/api/admin/analytics`, { withCredentials: true });
+        return { success: true, data: res.data.analytics };
+        } catch (err: any) {
+        return { success: false, error: err.response?.data?.error || "Failed to fetch analytics" };
+        }
+    },
+
+    async getAdvancedAnalytics(timeframe: string): Promise<{ success: boolean; data?: AdvancedAnalytics; error?: string }> {
+        try {
+            const res = await axios.get(`${BACKEND_URL}/api/admin/analytics/advanced`, {
+                params: { timeframe },
+                withCredentials: true,
+            });
+            return { success: true, data: res.data.analytics };
+        } catch (err: any) {
+            return { success: false, error: err.response?.data?.error || "Failed to fetch advanced analytics" };
+        }
+    }
+}

@@ -1,12 +1,24 @@
 import NestedComments from "./NestedComments";
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { X, MessageCircle, Bookmark, Share, Clock } from "lucide-react";
+import {
+  X,
+  MessageCircle,
+  Bookmark,
+  Share,
+  Clock,
+  Languages,
+  AudioLines,
+  CirclePause 
+} from "lucide-react";
 import type { Story } from "../../types/story";
 import { ClapButton } from "./ClapButton";
 import { useNavigate } from "react-router-dom";
 import { useBookmarks } from "../../hooks/useBookmarks";
+import { Button } from "../Shad";
+import useTranslation from "../../hooks/useTranslation";
+import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 
 interface ContentPreviewProps {
   story: Story;
@@ -21,6 +33,37 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { bookmarked, bookmarkCount, handleBookmark } = useBookmarks(story.id);
+  const { translateText, isTranslating } = useTranslation();
+  const [translated, setTranslated] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const { speak, stop, pause, resume, isPlaying, isPaused, languages } = useTextToSpeech();
+  const [speechLang, setSpeechLang] = useState("en-US");
+
+  useEffect(() => {
+    if (isTranslating) {
+      setTranslated(null);
+    }
+  }, [isTranslating]);
+
+  const handleTranslate = async () => {
+    console.log("translating");
+    if (!translated) {
+      const res = await translateText(story.title, story.content, "hi");
+      setTranslated(res);
+    }
+    setShowTranslation((prev) => !prev);
+  };
+  const handleSpeak = () => {
+    const text =
+      (showTranslation && translated ? translated.content : story.content) ||
+      story.excerpt;
+    if (text) {
+      speak(text, speechLang);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -126,33 +169,69 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             scrollbarColor: "#cbd5e1 transparent",
           }}
         >
-          <div className="mb-8">
-            <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 sm:text-3xl md:text-4xl dark:text-gray-200">
-              {story.title}
-            </h1>
+          <div className="mb-8 flex flex-row justify-between">
+            <div>
+              <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 sm:text-3xl md:text-4xl dark:text-gray-200">
+                {showTranslation && translated ? translated.title : story.title}
+              </h1>
 
-            <div className="mb-6 flex flex-wrap gap-2">
-              {story.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600 dark:bg-black"
+              <div className="mb-6 flex flex-wrap gap-2">
+                {story.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600 dark:bg-black"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-row justify-center items-center gap-3">
+              <div className="mt-6 flex items-center gap-3">
+                <select
+                  value={speechLang}
+                  onChange={(e) => setSpeechLang(e.target.value)}
+                  className="rounded-md border py-1 text-sm bg-gray-700"
                 >
-                  {tag}
-                </span>
-              ))}
+                  {languages.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+                {!isPlaying() && 
+                  <Button 
+                    onClick={handleSpeak}
+                    className="hover:bg-teal-100"
+                    variant="outline">
+                    <AudioLines className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                  </Button>
+                }
+                  <Button onClick={stop} variant="outline">
+                      <CirclePause />
+                  </Button>
+              </div>
+                <Button
+                  variant={"outline"}
+                  className="hover:bg-teal-100 mt-6"
+                  onClick={() => handleTranslate()}
+                >
+                  <Languages className="h-5 w-5 text-gray-400 hover:text-blue-600" />
+                </Button>
             </div>
           </div>
 
           <div
             className="mb-6 flex cursor-pointer items-center gap-3"
-            onClick={handleNavigate}
-          >
+            >
             <img
               src={story.author.avatar || "/placeholder.svg"}
               alt={story.author.name}
               className="h-10 w-10 rounded-full object-cover"
-            />
-            <div>
+              />
+            <div
+              onClick={handleNavigate}
+            >
               <h3 className="font-semibold text-gray-900 dark:text-gray-200">
                 {story.author.name}
               </h3>
@@ -214,9 +293,16 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
             <p className="mb-6 text-lg leading-relaxed font-medium text-gray-700 sm:text-xl">
               {story.excerpt}
             </p>
-            <div className="space-y-4 leading-relaxed text-gray-700">
+            <div className="space-y-4 leading-relaxed text-gray-700 dark:text-gray-200">
               {story.content ? (
-                <div dangerouslySetInnerHTML={{ __html: story.content }} />
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      showTranslation && translated
+                        ? translated.content
+                        : story.content,
+                  }}
+                />
               ) : (
                 <>
                   <p>

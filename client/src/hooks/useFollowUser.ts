@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toggleUserFollow, getUserFollowData } from '../api/featureServices';
+import { toggleUserFollow, getUserFollowData } from '../services/featureServices';
 
 export const useFollowUser = (userId: string, initialFollowing?: boolean) => {
   const [isFollowing, setIsFollowing] = useState(initialFollowing || false);

@@ -1,13 +1,12 @@
-"use client";
-
 import Stories from "./Stories";
-import Sidebar from "../Sidebar";
+import Sidebar from "./Sidebar";
 import ContentPreview from "./ContentPreview";
 import { useState, useEffect } from "react";
 import { ReactLenis } from "lenis/react";
 import { useStories } from "../../hooks/useStories";
 import { motion, AnimatePresence } from "motion/react";
 import type { Story } from "../../types/story";
+import StoriesHeader from "./StoriesHeader";
 
 export const StoriesLayout = () => {
   const [sidebarFixed, setSidebarFixed] = useState(true);
@@ -44,6 +43,8 @@ export const StoriesLayout = () => {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading stories</div>;
 
+  
+
   return (
     <ReactLenis root>
       <div className="min-h-screen">
@@ -51,9 +52,11 @@ export const StoriesLayout = () => {
           <div className="flex gap-8">
             <main className="max-w-4xl flex-1">
               <div className="mb-8">
-                <h2 className="mb-2 text-3xl font-bold text-gray-900">
-                  Latest Stories
-                </h2>
+                <div className="flex flex-row gap-6 text-sm font-semibold">
+                  <div className="flex space-x-1 rounded-lg bg-gray-100 p-1">
+                    
+                  </div>
+                </div>
                 <p>
                   Discover the latest Insights from our community of writers
                 </p>
@@ -91,22 +94,20 @@ export const StoriesLayout = () => {
               </div>
             </main>
 
-            <aside className={`w-80 transition-all duration-300 hidden md:block`}>
+            <aside
+              className={`hidden w-80 transition-all duration-300 md:block`}
+            >
               <Sidebar />
             </aside>
           </div>
         </div>
-
-        {/* Content Preview Modal */}
-        <AnimatePresence>
-          {selectedStory && (
-            <ContentPreview
-              story={selectedStory}
-              isOpen={!!selectedStory}
-              onClose={handleClosePreview}
-            />
-          )}
-        </AnimatePresence>
+        {selectedStory && (
+          <ContentPreview
+            story={selectedStory}
+            isOpen={!!selectedStory}
+            onClose={handleClosePreview}
+          />
+        )}
       </div>
     </ReactLenis>
   );

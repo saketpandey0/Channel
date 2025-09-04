@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TrendingUp, Users, BookOpen, Star, Plus, ArrowRight } from 'lucide-react';
+import { getTrendingStories } from '../../services/storyService';
+import { useState } from 'react';
+import type { Story } from '../../types/story';
+
 
 const Sidebar: React.FC = () => {
   const trendingAuthors = [
@@ -21,6 +25,19 @@ const Sidebar: React.FC = () => {
     { name: 'Maria Santos', action: 'liked', title: 'Building Scalable APIs', time: '4h ago' },
     { name: 'James Wilson', action: 'commented on', title: 'TypeScript Best Practices', time: '6h ago' },
   ];
+
+  const [trendingStories, setTrendingStories] = useState<Story[]>([]);
+
+  useEffect(()=> {
+    const fetchTrendingStories = async () => {
+      try {
+        const response = await getTrendingStories(1, 10);
+        setTrendingStories(response.stories);
+      }catch(error){
+        console.error('Error fetching trending stories', error);
+      }
+    }
+  })
 
   return (
     <div className="space-y-6">

@@ -7,9 +7,9 @@ import { body, query, param, validationResult } from 'express-validator';
 
 
 type EngagementStats = {
-    active_readers: number;
-    avg_reading_time: number;
-    avg_progress: number;
+  active_readers: number;
+  avg_reading_time: number;
+  avg_progress: number;
 };
 
 
@@ -51,108 +51,108 @@ export const getCurrentAdmin = [
 
 
 export const getAdminUsers: RequestHandler[] = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
-            const skip = (page - 1) * limit;
-            const search = req.query.search as string;
-            const status = req.query.status as string;
-            const role = req.query.role as string;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+      const search = req.query.search as string;
+      const status = req.query.status as string;
+      const role = req.query.role as string;
 
-            const where: any = {};
+      const where: any = {};
 
-            if (search) {
-                where.OR = [
-                    { username: { contains: search, mode: 'insensitive' } },
-                    { email: { contains: search, mode: 'insensitive' } },
-                    { name: { contains: search, mode: 'insensitive' } },
-                ];
+      if (search) {
+        where.OR = [
+          { username: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      if (status) where.status = status;
+      if (role) where.role = role;
+
+      const users = await prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          isVerified: true,
+          createdAt: true,
+          lastActiveAt: true,
+          avatar: true,
+          bio: true,
+          followersCount: true,
+          followingCount: true,
+          bookmarkCount: true,
+          _count: {
+            select: {
+              stories: true,
+              followers: true,
+              following: true,
             }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      });
+      const totalUsers = await prisma.user.count({ where });
 
-            if (status) where.status = status;
-            if (role) where.role = role;
-
-            const users = await prisma.user.findMany({
-                where,
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    name: true,
-                    role: true,
-                    status: true,
-                    isVerified: true,
-                    createdAt: true,
-                    lastActiveAt: true,
-                    avatar: true,
-                    bio: true,
-                    followersCount: true,
-                    followingCount: true,
-                    bookmarkCount: true,
-                    _count: {
-                        select: {
-                            stories: true,
-                            followers: true,
-                            following: true,
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            });
-          const totalUsers = await prisma.user.count({ where });
-
-            res.status(200).json({
-                users,
-                pagination: {
-                    page,
-                    limit,
-                    total: totalUsers,
-                    totalPages: Math.ceil(totalUsers / limit),
-                }
-            });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+      res.status(200).json({
+        users,
+        pagination: {
+          page,
+          limit,
+          total: totalUsers,
+          totalPages: Math.ceil(totalUsers / limit),
         }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const updateUserStatus = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { id } = req.params;
-            const { status } = req.body;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
 
-            if (!['ACTIVE', 'SUSPENDED', 'BANNED'].includes(status)) {
-                return res.status(400).json({ error: "Invalid status" });
-            }
+      if (!['ACTIVE', 'SUSPENDED', 'BANNED'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
 
-            const updatedUser = await prisma.user.update({
-                where: { id },
-                data: { status },
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    name: true,
-                    status: true,
-                }
-            });
-
-            await cache.evict(`user`, [id]);
-            await cache.evict(`analytics:dashboard`, [id]);
-
-            res.status(200).json({ user: updatedUser });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+      const updatedUser = await prisma.user.update({
+        where: { id },
+        data: { status },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          name: true,
+          status: true,
         }
+      });
+
+      await cache.evict(`user`, [id]);
+      await cache.evict(`analytics:dashboard`, [id]);
+
+      res.status(200).json({ user: updatedUser });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 
@@ -181,80 +181,80 @@ export const deleteUserAccount = [
 
 
 export const getAdminStories = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
-            const skip = (page - 1) * limit;
-            const status = req.query.status as string || "";
-            const search = req.query.search as string || "";
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+      const status = req.query.status as string || "";
+      const search = req.query.search as string || "";
 
-            const cacheKeyArgs = [page.toString(), limit.toString(), status, search];
-            const cached = await cache.get("admin:stories", cacheKeyArgs);
+      const cacheKeyArgs = [page.toString(), limit.toString(), status, search];
+      const cached = await cache.get("admin:stories", cacheKeyArgs);
 
-            if (cached) {
-                return res.status(200).json(cached);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+
+      const where: any = {};
+      if (status) where.status = status;
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { subtitle: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      const stories = await prisma.story.findMany({
+        where,
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              avatar: true,
             }
-
-            const where: any = {};
-            if (status) where.status = status;
-            if (search) {
-                where.OR = [
-                    { title: { contains: search, mode: 'insensitive' } },
-                    { subtitle: { contains: search, mode: 'insensitive' } },
-                ];
+          },
+          publication: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
             }
+          },
+          _count: {
+            select: {
+              claps: true,
+              comments: true,
+              reports: true,
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      });
 
-            const stories = await prisma.story.findMany({
-                where,
-                include: {
-                    author: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            avatar: true,
-                        }
-                    },
-                    publication: {
-                        select: {
-                            id: true,
-                            name: true,
-                            slug: true,
-                        }
-                    },
-                    _count: {
-                        select: {
-                            claps: true,
-                            comments: true,
-                            reports: true,
-                        }
-                    }
-                },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
-            });
+      const totalStories = await prisma.story.count({ where });
 
-            const totalStories = await prisma.story.count({ where });
-
-            const responsePayload = {
-                stories,
-                pagination: {
-                    page,
-                    limit,
-                    total: totalStories,
-                    totalPages: Math.ceil(totalStories / limit),
-                }
-            };
-
-            res.status(200).json(responsePayload);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+      const responsePayload = {
+        stories,
+        pagination: {
+          page,
+          limit,
+          total: totalStories,
+          totalPages: Math.ceil(totalStories / limit),
         }
+      };
+
+      res.status(200).json(responsePayload);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 
@@ -294,24 +294,24 @@ export const moderateStory = [
 
 
 export const removeStory = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { id } = req.params;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { id } = req.params;
 
-            await prisma.story.delete({
-                where: { id }
-            });
+      await prisma.story.delete({
+        where: { id }
+      });
 
-            await cache.evict(`story:${id}`, [id]);
-            await cache.evictPattern(`related:${id}:*`);
+      await cache.evict(`story:${id}`, [id]);
+      await cache.evictPattern(`related:${id}:*`);
 
-            res.status(200).json({ message: "Story removed successfully" });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
-        }
+      res.status(200).json({ message: "Story removed successfully" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getAdminPublications = [
@@ -365,207 +365,207 @@ export const getAdminPublications = [
 ];
 
 export const moderatePublication = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { id } = req.params;
-            const { isPublic } = req.body;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { id } = req.params;
+      const { isPublic } = req.body;
 
-            const updatedPublication = await prisma.publication.update({
-                where: { id },
-                data: { isPublic },
-            });
+      const updatedPublication = await prisma.publication.update({
+        where: { id },
+        data: { isPublic },
+      });
 
-            await cache.evict(`publication:${id}`, [id]);
+      await cache.evict(`publication:${id}`, [id]);
 
-            res.status(200).json({ publication: updatedPublication });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
-        }
+      res.status(200).json({ publication: updatedPublication });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getAdminReports = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
-            const skip = (page - 1) * limit;
-            const status = req.query.status as string || 'PENDING';
-            const type = req.query.type as string; 
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+      const status = req.query.status as string || 'PENDING';
+      const type = req.query.type as string;
 
-            const statusOptions = ['PENDING','UNDER_REVIEW', 'RESOLVED', 'DISMISSED'];
-            if (!statusOptions.includes(status)) {
-                return res.status(400).json({ error: "Invalid status" });
+      const statusOptions = ['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'];
+      if (!statusOptions.includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const where: any = { status };
+
+      if (type === 'story') where.storyId = { not: null };
+      if (type === 'comment') where.commentId = { not: null };
+      if (type === 'user') where.userId = { not: null };
+
+      const reports = await prisma.report.findMany({
+        where,
+        include: {
+          reportedBy: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              avatar: true,
             }
-
-            const where: any = { status };
-            
-            if (type === 'story') where.storyId = { not: null };
-            if (type === 'comment') where.commentId = { not: null };
-            if (type === 'user') where.userId = { not: null };
-
-            const reports = await prisma.report.findMany({
-                where,
-                include: {
-                    reportedBy: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            avatar: true,
-                        }
-                    },
-                    story: {
-                        select: {
-                            id: true,
-                            title: true,
-                            author: {
-                                select: {
-                                    id: true,
-                                    username: true,
-                                    name: true,
-                                }
-                            }
-                        }
-                    },
-                    comment: {
-                        select: {
-                            id: true,
-                            content: true,
-                            author: {
-                                select: {
-                                    id: true,
-                                    username: true,
-                                    name: true,
-                                }
-                            }
-                        }
-                    },
-                    user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            avatar: true,
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            });
-
-            const totalReports = await prisma.report.count({ where });
-
-            res.status(200).json({
-                reports,
-                pagination: {
-                    page,
-                    limit,
-                    total: totalReports,
-                    totalPages: Math.ceil(totalReports / limit),
+          },
+          story: {
+            select: {
+              id: true,
+              title: true,
+              author: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true,
                 }
-            });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal server error" });
+              }
+            }
+          },
+          comment: {
+            select: {
+              id: true,
+              content: true,
+              author: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true,
+                }
+              }
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              avatar: true,
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      });
+
+      const totalReports = await prisma.report.count({ where });
+
+      res.status(200).json({
+        reports,
+        pagination: {
+          page,
+          limit,
+          total: totalReports,
+          totalPages: Math.ceil(totalReports / limit),
         }
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const resolveReport = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { id } = req.params;
-            const { status, action } = req.body;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { id } = req.params;
+      const { status, action } = req.body;
 
-            if (!['RESOLVED', 'DISMISSED'].includes(status)) {
-                return res.status(400).json({ error: "Invalid status" });
-            }
+      if (!['RESOLVED', 'DISMISSED'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
 
-            const report = await prisma.report.update({
-                where: { id },
-                data: {
-                    status,
-                    resolvedAt: new Date(),
-                },
-                include: {
-                    story: true,
-                    comment: true,
-                    user: true,
-                }
-            });
-
-            if (status === 'RESOLVED' && action) {
-                switch (action) {
-                    case 'DELETE_STORY':
-                        if (report.storyId) {
-                            await prisma.story.delete({ where: { id: report.storyId } });
-                            await redis.del(`story:${report.storyId}`);
-                        }
-                        break;
-                    case 'DELETE_COMMENT':
-                        if (report.commentId) {
-                            await prisma.comment.delete({ where: { id: report.commentId } });
-                        }
-                        break;
-                    case 'SUSPEND_USER':
-                        if (report.userId) {
-                            await prisma.user.update({
-                                where: { id: report.userId },
-                                data: { status: 'SUSPENDED' }
-                            });
-                            await redis.del(`user:${report.userId}`);
-                        }
-                        break;
-                }
-            }
-
-            res.status(200).json({ report });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal server error" });
+      const report = await prisma.report.update({
+        where: { id },
+        data: {
+          status,
+          resolvedAt: new Date(),
+        },
+        include: {
+          story: true,
+          comment: true,
+          user: true,
         }
+      });
+
+      if (status === 'RESOLVED' && action) {
+        switch (action) {
+          case 'DELETE_STORY':
+            if (report.storyId) {
+              await prisma.story.delete({ where: { id: report.storyId } });
+              await redis.del(`story:${report.storyId}`);
+            }
+            break;
+          case 'DELETE_COMMENT':
+            if (report.commentId) {
+              await prisma.comment.delete({ where: { id: report.commentId } });
+            }
+            break;
+          case 'SUSPEND_USER':
+            if (report.userId) {
+              await prisma.user.update({
+                where: { id: report.userId },
+                data: { status: 'SUSPENDED' }
+              });
+              await redis.del(`user:${report.userId}`);
+            }
+            break;
+        }
+      }
+
+      res.status(200).json({ report });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getAdminAnalytics = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const cacheKey = ["admin", "platform"]; 
-            const cachedAnalytics = await cache.get("analytics", cacheKey);
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const cacheKey = ["admin", "platform"];
+      const cachedAnalytics = await cache.get("analytics", cacheKey);
 
-            if (cachedAnalytics) {
-                return res.status(200).json({ analytics: cachedAnalytics });
-            }
+      if (cachedAnalytics) {
+        return res.status(200).json({ analytics: cachedAnalytics });
+      }
 
-            const [
-                userStats,
-                storyStats,
-                publicationStats,
-                engagementStats,
-                monthlyGrowth,
-            ] = await Promise.all([
-                prisma.user.groupBy({
-                    by: ['status'],
-                    _count: { id: true },
-                }),
+      const [
+        userStats,
+        storyStats,
+        publicationStats,
+        engagementStats,
+        monthlyGrowth,
+      ] = await Promise.all([
+        prisma.user.groupBy({
+          by: ['status'],
+          _count: { id: true },
+        }),
 
-                prisma.story.aggregate({
-                    _count: { id: true },
-                    _sum: { viewCount: true, clapCount: true, commentCount: true },
-                }),
+        prisma.story.aggregate({
+          _count: { id: true },
+          _sum: { viewCount: true, clapCount: true, commentCount: true },
+        }),
 
-                prisma.publication.aggregate({
-                    _count: { id: true },
-                }),
+        prisma.publication.aggregate({
+          _count: { id: true },
+        }),
 
-                prisma.$queryRaw<EngagementStats[]>`
+        prisma.$queryRaw<EngagementStats[]>`
                     SELECT 
                         COUNT(DISTINCT rh.user_id) as active_readers,
                         AVG(rh.reading_time) as avg_reading_time,
@@ -574,7 +574,7 @@ export const getAdminAnalytics = [
                     WHERE rh.last_read_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
                 `,
 
-                prisma.$queryRaw`
+        prisma.$queryRaw`
                     SELECT 
                         DATE_FORMAT(created_at, '%Y-%m') as month,
                         COUNT(*) as new_users,
@@ -596,308 +596,308 @@ export const getAdminAnalytics = [
                     
                     ORDER BY month DESC
                 `,
-            ]);
+      ]);
 
-            const analytics = {
-                users: {
-                    total: userStats.reduce((sum, stat) => sum + stat._count.id, 0),
-                    byStatus: userStats,
-                },
-                stories: {
-                    total: storyStats._count.id,
-                    totalViews: storyStats._sum.viewCount || 0,
-                    totalClaps: storyStats._sum.clapCount || 0,
-                    totalComments: storyStats._sum.commentCount || 0,
-                },
-                publications: {
-                    total: publicationStats._count.id,
-                },
-                engagement: engagementStats[0],
-                growth: monthlyGrowth,
-            };
+      const analytics = {
+        users: {
+          total: userStats.reduce((sum, stat) => sum + stat._count.id, 0),
+          byStatus: userStats,
+        },
+        stories: {
+          total: storyStats._count.id,
+          totalViews: storyStats._sum.viewCount || 0,
+          totalClaps: storyStats._sum.clapCount || 0,
+          totalComments: storyStats._sum.commentCount || 0,
+        },
+        publications: {
+          total: publicationStats._count.id,
+        },
+        engagement: engagementStats[0],
+        growth: monthlyGrowth,
+      };
 
-            await cache.set("analytics", cacheKey, analytics, 1800);
+      await cache.set("analytics", cacheKey, analytics, 1800);
 
-            res.status(200).json({ analytics });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal server error" });
-        }
+      res.status(200).json({ analytics });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getSystemHealth = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const cacheKey = ["health"];
-            const cachedHealth = await cache.get("system", cacheKey);
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const cacheKey = ["health"];
+      const cachedHealth = await cache.get("system", cacheKey);
 
-            if (cachedHealth) {
-                return res.status(200).json({ health: cachedHealth });
-            }
+      if (cachedHealth) {
+        return res.status(200).json({ health: cachedHealth });
+      }
 
-            const dbStart = Date.now();
-            await prisma.$queryRaw`SELECT 1`;
-            const dbLatency = Date.now() - dbStart;
+      const dbStart = Date.now();
+      await prisma.$queryRaw`SELECT 1`;
+      const dbLatency = Date.now() - dbStart;
 
-            const redisStart = Date.now();
-            await redis.ping();
-            const redisLatency = Date.now() - redisStart;
+      const redisStart = Date.now();
+      await redis.ping();
+      const redisLatency = Date.now() - redisStart;
 
-            const health = {
-                database: {
-                    status:
-                        dbLatency < 100 ? "healthy" :
-                        dbLatency < 500 ? "warning" :
-                        "critical",
-                    latency: dbLatency,
-                },
-                redis: {
-                    status:
-                        redisLatency < 50 ? "healthy" :
-                        redisLatency < 200 ? "warning" :
-                        "critical",
-                    latency: redisLatency,
-                },
-                memory: {
-                    used: process.memoryUsage(),
-                },
-                uptime: process.uptime(),
-                timestamp: new Date(),
-            };
+      const health = {
+        database: {
+          status:
+            dbLatency < 100 ? "healthy" :
+              dbLatency < 500 ? "warning" :
+                "critical",
+          latency: dbLatency,
+        },
+        redis: {
+          status:
+            redisLatency < 50 ? "healthy" :
+              redisLatency < 200 ? "warning" :
+                "critical",
+          latency: redisLatency,
+        },
+        memory: {
+          used: process.memoryUsage(),
+        },
+        uptime: process.uptime(),
+        timestamp: new Date(),
+      };
 
-            await cache.set("system", cacheKey, health, 60);
+      await cache.set("system", cacheKey, health, 60);
 
-            res.status(200).json({ health });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal server error" });
-        }
+      res.status(200).json({ health });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getAdminDashboard = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const cacheKey = ["dashboard", "summary"];
-            const cached = await cache.get("admin", cacheKey);
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const cacheKey = ["dashboard", "summary"];
+      const cached = await cache.get("admin", cacheKey);
 
-            if (cached) {
-                return res.status(200).json(cached);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+
+      const [
+        totalUsers,
+        activeUsers,
+        totalStories,
+        publishedStories,
+        totalPublications,
+        pendingReports,
+        newUsersThisWeek,
+        newStoriesThisWeek,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { status: 'ACTIVE' } }),
+        prisma.story.count(),
+        prisma.story.count({ where: { status: 'PUBLISHED' } }),
+        prisma.publication.count(),
+        prisma.report.count({ where: { status: 'PENDING' } }),
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
             }
+          }
+        }),
+        prisma.story.count({
+          where: {
+            publishedAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            },
+            status: 'PUBLISHED'
+          }
+        }),
+      ]);
 
-            const [
-                totalUsers,
-                activeUsers,
-                totalStories,
-                publishedStories,
-                totalPublications,
-                pendingReports,
-                newUsersThisWeek,
-                newStoriesThisWeek,
-            ] = await Promise.all([
-                prisma.user.count(),
-                prisma.user.count({ where: { status: 'ACTIVE' } }),
-                prisma.story.count(),
-                prisma.story.count({ where: { status: 'PUBLISHED' } }),
-                prisma.publication.count(),
-                prisma.report.count({ where: { status: 'PENDING' } }),
-                prisma.user.count({
-                    where: {
-                        createdAt: {
-                            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                        }
-                    }
-                }),
-                prisma.story.count({
-                    where: {
-                        publishedAt: {
-                            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                        },
-                        status: 'PUBLISHED'
-                    }
-                }),
-            ]);
-
-            const dashboardData = {
-                summary: {
-                    totalUsers,
-                    activeUsers,
-                    totalStories,
-                    publishedStories,
-                    totalPublications,
-                    pendingReports,
-                    newUsersThisWeek,
-                    newStoriesThisWeek,
-                },
-                growth: {
-                    userGrowth: newUsersThisWeek,
-                    storyGrowth: newStoriesThisWeek,
-                }
-            };
-
-            await cache.set("admin", cacheKey, dashboardData, 300); 
-
-            res.status(200).json(dashboardData);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+      const dashboardData = {
+        summary: {
+          totalUsers,
+          activeUsers,
+          totalStories,
+          publishedStories,
+          totalPublications,
+          pendingReports,
+          newUsersThisWeek,
+          newStoriesThisWeek,
+        },
+        growth: {
+          userGrowth: newUsersThisWeek,
+          storyGrowth: newStoriesThisWeek,
         }
+      };
+
+      await cache.set("admin", cacheKey, dashboardData, 300);
+
+      res.status(200).json(dashboardData);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const bulkActionStories = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { storyIds, action } = req.body;
-            
-            if (!Array.isArray(storyIds) || storyIds.length === 0) {
-                return res.status(400).json({ error: "Story IDs are required" });
-            }
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { storyIds, action } = req.body;
 
-            if (!['PUBLISH', 'ARCHIVE', 'DELETE'].includes(action)) {
-                return res.status(400).json({ error: "Invalid action" });
-            }
+      if (!Array.isArray(storyIds) || storyIds.length === 0) {
+        return res.status(400).json({ error: "Story IDs are required" });
+      }
 
-            let result;
-            
-            switch (action) {
-                case 'PUBLISH':
-                    result = await prisma.story.updateMany({
-                        where: { id: { in: storyIds } },
-                        data: { status: 'PUBLISHED', publishedAt: new Date() }
-                    });
-                    break;
-                case 'ARCHIVE':
-                    result = await prisma.story.updateMany({
-                        where: { id: { in: storyIds } },
-                        data: { status: 'ARCHIVED' }
-                    });
-                    break;
-                case 'DELETE':
-                    result = await prisma.story.deleteMany({
-                        where: { id: { in: storyIds } }
-                    });
-                    break;
-            }
+      if (!['PUBLISH', 'ARCHIVE', 'DELETE'].includes(action)) {
+        return res.status(400).json({ error: "Invalid action" });
+      }
 
-            await Promise.all(
-                storyIds.map(id => cache.evict("story", [id]))
-            );
+      let result;
 
-            res.status(200).json({
-                message: `Bulk ${action.toLowerCase()} completed`,
-                affected: result?.count || 0,
-            });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
-        }
+      switch (action) {
+        case 'PUBLISH':
+          result = await prisma.story.updateMany({
+            where: { id: { in: storyIds } },
+            data: { status: 'PUBLISHED', publishedAt: new Date() }
+          });
+          break;
+        case 'ARCHIVE':
+          result = await prisma.story.updateMany({
+            where: { id: { in: storyIds } },
+            data: { status: 'ARCHIVED' }
+          });
+          break;
+        case 'DELETE':
+          result = await prisma.story.deleteMany({
+            where: { id: { in: storyIds } }
+          });
+          break;
+      }
+
+      await Promise.all(
+        storyIds.map(id => cache.evict("story", [id]))
+      );
+
+      res.status(200).json({
+        message: `Bulk ${action.toLowerCase()} completed`,
+        affected: result?.count || 0,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 export const getUserActivityLogs = [
-    requireAdmin,
-    async (req: Request, res: Response): Promise<any> => {
-        try {
-            const { userId } = req.params;
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
-            const skip = (page - 1) * limit;
+  requireAdmin,
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { userId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
 
-            const [stories, comments, claps, follows] = await Promise.all([
-                prisma.story.findMany({
-                    where: { authorId: userId },
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                        createdAt: true,
-                        publishedAt: true,
-                        viewCount: true,
-                        clapCount: true,
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 10,
-                }),
-                prisma.comment.findMany({
-                    where: { authorId: userId },
-                    select: {
-                        id: true,
-                        content: true,
-                        createdAt: true,
-                        story: {
-                            select: { id: true, title: true }
-                        }
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 10,
-                }),
-                prisma.clap.findMany({
-                    where: { userId },
-                    include: {
-                        story: {
-                            select: { id: true, title: true }
-                        }
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 10,
-                }),
-                prisma.follow.findMany({
-                    where: { followerId: userId },
-                    include: {
-                        following: {
-                            select: { id: true, username: true, name: true }
-                        }
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 10,
-                }),
-            ]);
+      const [stories, comments, claps, follows] = await Promise.all([
+        prisma.story.findMany({
+          where: { authorId: userId },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            createdAt: true,
+            publishedAt: true,
+            viewCount: true,
+            clapCount: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        prisma.comment.findMany({
+          where: { authorId: userId },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            story: {
+              select: { id: true, title: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        prisma.clap.findMany({
+          where: { userId },
+          include: {
+            story: {
+              select: { id: true, title: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        prisma.follow.findMany({
+          where: { followerId: userId },
+          include: {
+            following: {
+              select: { id: true, username: true, name: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+      ]);
 
-            res.status(200).json({
-                activities: {
-                    stories,
-                    comments,
-                    claps,
-                    follows,
-                }
-            });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ error: "Internal server error" });
+      res.status(200).json({
+        activities: {
+          stories,
+          comments,
+          claps,
+          follows,
         }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
     }
+  }
 ];
 
 
 
 export const requireAdminWithLogging = async (req: Request, res: Response, next: NextFunction) => {
-    try{
-        const user = req.session.user || req.user;
-        if(!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')){
-            return res.status(403).json({error: "Admin access required"});
-        }
-        await prisma.adminLog.create({
-            data: {
-                adminId: user.userId,
-                action : `${req.method} ${req.path}`,
-                ipAddress: req.ip,
-                userAgent: req.get('User-Agent') || 'unknown',
-                metadata: {
-                    query: req.query,
-                    params: req.params
-                }
-            }
-        });
-        next();
-    } catch (err: any){
-        console.error('Admin middleware error: ', err);
-        res.status(500).json({error: "Internal server error"});
+  try {
+    const user = req.session.user || req.user;
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
+      return res.status(403).json({ error: "Admin access required" });
     }
+    await prisma.adminLog.create({
+      data: {
+        adminId: user.userId,
+        action: `${req.method} ${req.path}`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || 'unknown',
+        metadata: {
+          query: req.query,
+          params: req.params
+        }
+      }
+    });
+    next();
+  } catch (err: any) {
+    console.error('Admin middleware error: ', err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 }
 
 
@@ -958,7 +958,7 @@ export const getAdvancedAnalytics = [
     try {
       const timeframe = req.query.timeframe as string || '30d';
       const cacheKey = [`analytics:advanced`, timeframe];
-      
+
       const cached = await cache.get("admin", cacheKey);
       if (cached) {
         return res.status(200).json({ analytics: cached });
@@ -998,7 +998,7 @@ export const getAdvancedAnalytics = [
         // Story publications over time
         prisma.story.groupBy({
           by: ['publishedAt'],
-          where: { 
+          where: {
             publishedAt: { gte: dateFilter },
             status: 'PUBLISHED'
           },
@@ -1008,7 +1008,7 @@ export const getAdvancedAnalytics = [
 
         // Engagement metrics
         prisma.story.aggregate({
-          where: { 
+          where: {
             publishedAt: { gte: dateFilter },
             status: 'PUBLISHED'
           },
@@ -1142,7 +1142,7 @@ export const getModerationQueue = [
         where: {
           OR: [
             { status: 'DRAFT' }, // New submissions
-            { 
+            {
               reports: {
                 some: {
                   status: 'PENDING'
@@ -1195,7 +1195,7 @@ export const getModerationQueue = [
         where: {
           OR: [
             { status: 'DRAFT' },
-            { 
+            {
               reports: {
                 some: {
                   status: 'PENDING'
@@ -1210,16 +1210,16 @@ export const getModerationQueue = [
       const itemsWithPriority = moderationItems.map(item => {
         const reportCount = item._count.reports;
         const authorRole = item.author.role;
-        
+
         let priorityScore = 0;
         if (reportCount > 5) priorityScore += 3;
         else if (reportCount > 2) priorityScore += 2;
         else if (reportCount > 0) priorityScore += 1;
-        
+
         if (authorRole === 'READER') priorityScore += 1; // New users get extra scrutiny
-        
+
         const priority = priorityScore >= 3 ? 'high' : priorityScore >= 1 ? 'medium' : 'low';
-        
+
         return {
           ...item,
           priority,
@@ -1264,7 +1264,7 @@ export const getModerationQueue = [
 //       for (const itemId of itemIds) {
 //         try {
 //           let result;
-          
+
 //           switch (action) {
 //             case 'approve':
 //               result = await prisma.story.update({
@@ -1275,7 +1275,7 @@ export const getModerationQueue = [
 //                 }
 //               });
 //               break;
-              
+
 //             case 'reject':
 //             case 'archive':
 //               result = await prisma.story.update({
@@ -1283,13 +1283,13 @@ export const getModerationQueue = [
 //                 data: { status: 'ARCHIVED' }
 //               });
 //               break;
-              
+
 //             case 'delete':
 //               result = await prisma.story.delete({
 //                 where: { id: itemId }
 //               });
 //               break;
-              
+
 //             case 'flag':
 //               // Create internal flag for further review
 //               await prisma.contentFlag.create({
@@ -1316,7 +1316,7 @@ export const getModerationQueue = [
 //           });
 
 //           await cache.evict('story', [itemId]);
-          
+
 //           results.push({ id: itemId, success: true, result });
 //         } catch (error: any) {
 //           results.push({ id: itemId, success: false, error: error.message });
@@ -1457,7 +1457,7 @@ export const createSiteNotification = [
 
       for (let i = 0; i < userIds.length; i += batchSize) {
         const batch = userIds.slice(i, i + batchSize);
-        
+
         const notifications = batch.map((userId: any) => ({
           userId,
           type: type as 'STORY_PUBLISHED' | 'COMMENT_RECEIVED' | 'CLAP_RECEIVED' | 'FOLLOWER_GAINED' | 'STORY_ACCEPTED' | 'STORY_REJECTED' | 'NEWSLETTER_SENT' | 'MENTION_RECEIVED',
@@ -1495,7 +1495,7 @@ export const createSiteNotification = [
 //     try {
 //       const cacheKey = ['platform:stats'];
 //       const cached = await cache.get('admin', cacheKey);
-      
+
 //       if (cached) {
 //         return res.status(200).json({ stats: cached });
 //       }
@@ -1521,18 +1521,18 @@ export const createSiteNotification = [
 //         prisma.publication.count(),
 //         prisma.report.count(),
 //         prisma.report.count({ where: { status: 'PENDING' } }),
-        
+
 //         prisma.user.aggregate({
 //           _avg: {
 //             // This would need a custom query or computed field
 //             stories: { _count: true }
 //           }
 //         }),
-        
+
 //         prisma.readingHistory.aggregate({
 //           _avg: { readingTime: true }
 //         }),
-        
+
 //         prisma.tag.findMany({
 //           select: {
 //             id: true,
@@ -1603,28 +1603,28 @@ export const validateUserUpdate = [
 
 
 export const validateStoryModeration = [
-    param('id').isUUID().withMessage('Valid story ID required'),
-    body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
-    body('reason').optional().isLength({min:10, max:500}).withMessage('Reason must be 10-500 characters'),
-    (req: Request, res: Response, next: NextFunction) => {
-        const error = validationResult(req);
-        if(!error.isEmpty()){
-            return res.status(400).json({ errors: error.array() });
-        }
-        next();
+  param('id').isUUID().withMessage('Valid story ID required'),
+  body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
+  body('reason').optional().isLength({ min: 10, max: 500 }).withMessage('Reason must be 10-500 characters'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
+      return res.status(400).json({ errors: error.array() });
     }
+    next();
+  }
 ]
 
 
 export const validatePublicationUpdate = [
-    param('id').isUUID().withMessage('Valid publication ID required'),
-    body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
-    body('reason').optional().isLength({min:10, max:500}).withMessage('Reason must be 10-500 characters'),
-    (req: Request, res: Response, next: NextFunction) => {
-        const error = validationResult(req);
-        if(!error.isEmpty()){
-            return res.status(400).json({ errors: error.array() });
-        }
-        next();
+  param('id').isUUID().withMessage('Valid publication ID required'),
+  body('status').isIn(['PUBLISHED', 'ARCHIVED', 'DRAFT']).withMessage('Invalid status'),
+  body('reason').optional().isLength({ min: 10, max: 500 }).withMessage('Reason must be 10-500 characters'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
+      return res.status(400).json({ errors: error.array() });
     }
+    next();
+  }
 ]

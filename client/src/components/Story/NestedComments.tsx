@@ -10,7 +10,7 @@ import {
   replyComment,
   toggleCommentClap,
   getBatchCommentClapData
-} from "../../api/featureServices";
+} from "../../services/featureServices";
 import { Loader2, MessageCircle } from "lucide-react";
 
 interface NestedCommentsProps {

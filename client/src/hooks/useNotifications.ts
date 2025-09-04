@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getUserNotification } from '../api/updateService';
+import { getUserNotification } from '../services/updateService';
 
 export const useNotifications = (userId: string) => {
   return useQuery({

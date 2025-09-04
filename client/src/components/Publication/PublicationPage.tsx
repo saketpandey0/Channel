@@ -1,13 +1,12 @@
-import { Card, CardHeader, Avatar, CardTitle, Button } from "../components/Shad";
-import { getPublication } from "../api/publicationsService";
+import { Card, CardHeader, Avatar, CardTitle, Button } from "../Shad";
+import { getPublication } from "../../services/publicationsService";
 import { useEffect, useState } from "react";  
 import { useParams } from "react-router-dom";
-import { PublicationSkeleton } from "../components/Skeleton/PublicationSkeleton";
+import { PublicationSkeleton } from "../../components/Skeleton/PublicationSkeleton";
 import { MailPlus } from 'lucide-react';
-import ContentPreview from '../components/Story/ContentPreview';
-import type { Story } from "../types/story";
+import ContentPreview from '../../components/Story/ContentPreview';
+import type { Story } from "../../types/story";
 
-// Define types for the publication data
 interface PublicationUser {
   id: string;
   username: string;
@@ -44,7 +43,7 @@ interface PublicationResponse {
   publication: PublicationData;
 }
 
-export default function PublicationPage() {
+export default function PublicationPage(publication: any) {
   const { id: publicationId } = useParams<{ id: string }>();
   const [publicationData, setPublicationData] = useState<PublicationData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

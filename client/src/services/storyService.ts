@@ -1,7 +1,7 @@
 import axios from "axios";
 import { BACKEND_URL } from "../const";
 import type { StoryData } from "../components/Editor/types";
-
+import type { StoryParams, Story } from "../types/story";
 
 export const createStory = async (payload: StoryData) => {
     const response = await axios.post(`${BACKEND_URL}/api/story/create`, {payload}, {
@@ -22,16 +22,6 @@ export const updateStory = async (id: string, payload: Partial<StoryData>): Prom
 }
 
 
-export const getStories = async (page: number, limit: number)=>{
-    try{
-        const response = await axios.get(`${BACKEND_URL}/api/story/getstories?page=${page}&limit=${limit}`, {
-            withCredentials: true
-        });
-        return response.data;
-    }catch(err: any){
-        console.error('getStories error', err);
-    }
-}
 
 export const getStory = async (id: string) => {
     try {
@@ -58,10 +48,22 @@ export const deleteStory = async (id: string) => {
     }
 }
 
+export const getRelatedStoriesService = async (id: string) => {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/api/content/stories/${id}/related`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to get related stories:", error.response?.data || error.message);
+    throw error.response?.data || { error: "Failed to get related stories" };
+  }
+};
 
-export const getFeed = async (page: number, limit: number) => {
+export const getFeed = async (params: StoryParams): Promise<Story[]> => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/api/story/getfeed?page=${page}&limit=${limit}`, {
+        const response = await axios.get(`${BACKEND_URL}/api/story/getfeed`, {
+            params,
             withCredentials: true
         });
         return response.data;
@@ -71,10 +73,23 @@ export const getFeed = async (page: number, limit: number) => {
     }
 }
 
+export const getStories = async (params: StoryParams): Promise<Story[]> => {
+    try{
+        const response = await axios.get(`${BACKEND_URL}/api/story/getstories`, {
+            params,
+            withCredentials: true
+        });
+        return response.data;
+    }catch(err: any){
+        console.error('getStories error', err);
+        throw err;
+    }
+}
 
-export const getTrendingStories = async (page: number, limit: number) => {
+export const getTrendingStories = async (params: StoryParams): Promise<Story[]> => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/api/story/gettrendingstories?page=${page}&limit=${limit}`, {
+        const response = await axios.get(`${BACKEND_URL}/api/story/trending/stories`, {
+            params,
             withCredentials: true
         });
         return response.data;
